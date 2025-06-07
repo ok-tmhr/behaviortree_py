@@ -1,7 +1,12 @@
 from abc import ABC, abstractmethod
 from collections.abc import Set
 from enum import Enum, auto
-from typing import AbstractSet, Self, Type
+from typing import Self, Type
+
+
+class NodeMeta(type):
+    def __isinstancecheck__(self, instance: object):
+        return callable(getattr(instance, "tick"))
 
 
 class NodeStatus(Enum):
