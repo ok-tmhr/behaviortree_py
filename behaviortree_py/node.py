@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum, auto
+from typing import Self, Type
 
 
 class NodeStatus(Enum):
@@ -9,38 +10,58 @@ class NodeStatus(Enum):
 
 
 class TreeNode(ABC):
-    def __init__(self, name: str | None = None):
-        self.name = name or self.__class__.__name__.removesuffix("Node")
+    __node_type: dict[str, Type[Self]] = {}
+
+    def __init__(self, name: str | None = None, **kwargs):
+        self.name = name or self.__class__.__name__
 
     @abstractmethod
     def tick(self) -> NodeStatus:
         pass
 
+    @classmethod
+    def register(cls):
+        print("register", cls.get_id(), cls.__name__)
+        TreeNode.__node_type[cls.get_id()] = cls
+
+    @classmethod
+    def get_id(cls) -> str:
+        return str(getattr(cls, f"_{cls.__name__}__id", cls.__name__))
+
+    @classmethod
+    def create(cls, ID: str, **kwargs) -> Self:
+        if arg := kwargs.get(ID):
+            return cls.__node_type[ID](arg, **kwargs)
+        return cls.__node_type[ID](**kwargs)
+
 
 class LeafNode(TreeNode):
-    def tick(self):
-        pass
+    pass
 
 
 class ActionNode(LeafNode):
-    def tick(self):
-        pass
+    pass
 
 
 class DecoratorNode(TreeNode):
-    def __init__(self, name, child: TreeNode):
-        super().__init__(name)
+    def __init__(self, child: TreeNode, **kwargs):
+        super().__init__(**kwargs)
         self.child = child
 
-    pass
+    def __init_subclass__(cls):
+        super().register()
 
 
 class ControlNode(TreeNode):
-    def __init__(self, name, *children: TreeNode):
-        super().__init__(name)
-        self.children = children
+    __id = "Control"
 
-    pass
+    def __init__(self, children: list[TreeNode], **kwargs):
+        super().__init__(**kwargs)
+        self.children = children
+        self._index = 0
+
+    def __init_subclass__(cls):
+        super().register()
 
 
 class ConditionNode(LeafNode):
@@ -48,11 +69,9 @@ class ConditionNode(LeafNode):
 
 
 class SequenceNode(ControlNode):
-    def __init__(self, name, *children):
-        super().__init__(name, *children)
-        self._index = 0
+    __id = "Sequence"
 
-    def tick(self):
+    def tick(self) -> NodeStatus:
         s = self.children[self._index].tick()
         if s == NodeStatus.SUCCESS and self._index < len(self.children) - 1:
             self._index += 1
@@ -61,11 +80,9 @@ class SequenceNode(ControlNode):
 
 
 class FallbackNode(ControlNode):
-    def __init__(self, name, *children):
-        super().__init__(name, *children)
-        self._index = 0
+    __id = "Fallback"
 
-    def tick(self):
+    def tick(self) -> NodeStatus:
         s = self.children[self._index].tick()
         if s == NodeStatus.FAILURE and self._index < len(self.children) - 1:
             self._index += 1
@@ -74,7 +91,7 @@ class FallbackNode(ControlNode):
 
 
 class Inverter(DecoratorNode):
-    def tick(self):
+    def tick(self) -> NodeStatus:
         match self.child.tick():
             case NodeStatus.SUCCESS:
                 return NodeStatus.FAILURE
@@ -85,14 +102,26 @@ class Inverter(DecoratorNode):
 
 
 class RetryUntilSuccessful(DecoratorNode):
-    def __init__(self, name, child, /, num_attempts: int):
-        super().__init__(name, child)
+    def __init__(self, child: TreeNode, num_attempts: int, **kwargs):
+        super().__init__(child, **kwargs)
         self.num_attempts = num_attempts
         self._attempt = 0
 
-    def tick(self):
+    def tick(self) -> NodeStatus:
         self._attempt += 1
         s = self.child.tick()
         if s == NodeStatus.FAILURE and self._attempt < self.num_attempts:
             return NodeStatus.RUNNING
         return s
+
+
+class ActionNodeBase(ActionNode):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __init_subclass__(cls):
+        super().register()
+
+
+class Blackboard:
+    pass
