@@ -39,7 +39,6 @@ class CloseDoor(ActionNode):
 if __name__ == "__main__":
     from node import (
         FallbackNode,
-        Inverter,
         RetryUntilSuccessful,
         SequenceNode,
     )
