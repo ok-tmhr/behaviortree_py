@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from node import ActionNodeBase, NodeStatus, SequenceNode, TreeNode
+from node import ActionNodeBase, NodeStatus, TreeNode
 
 
 class SaySomething(ActionNodeBase):
@@ -32,35 +32,31 @@ class CloseGripper(ActionNodeBase):
         return NodeStatus.SUCCESS
 
 
-nodes = {
-    x.__name__: x for x in {SaySomething, OpenGripper, ApproachObject, CloseGripper}
-}
-
-
 def json_hook(obj: dict[str, Any]):
+    if nt := TreeNode.find_node_type(obj.keys()):
+        return TreeNode.create(nt, **obj)
     match obj:
         case {"BehaviorTree": x}:
             return x
         case {"ID": x}:
             return TreeNode.create(**obj)
-        case {"Sequence": x}:
-            return TreeNode.create("Sequence", **obj)
         case _:
             return obj
 
 
-with open(
-    "D:\\kokur\\GitHub\\python_workspace\\src\\behaviortree_py\\behaviortree_py\\schema.json",
-    encoding="utf8",
-) as f:
-    bt = json.load(f, object_hook=json_hook)
-    from pprint import pprint
+if __name__ == "__main__":
+    with open(
+        "D:\\kokur\\GitHub\\python_workspace\\src\\behaviortree_py\\behaviortree_py\\schema.json",
+        encoding="utf8",
+    ) as f:
+        bt = json.load(f, object_hook=json_hook)
+        from pprint import pprint
 
-    pprint(bt)
+        pprint(bt)
 
-status = NodeStatus.RUNNING
-tree = bt["root"][0]
-while status == NodeStatus.RUNNING:
-    print("tick once")
-    status = tree.tick()
-print("tree finished", status.name)
+    status = NodeStatus.RUNNING
+    tree = bt["root"][0]
+    while status == NodeStatus.RUNNING:
+        print("tick once")
+        status = tree.tick()
+    print("tree finished", status.name)

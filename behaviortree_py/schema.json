@@ -11,8 +11,7 @@
                         "name": "action_hello"
                     },
                     {
-                        "ID": "OpenGripper",
-                        "name": "open_hello"
+                        "OpenGripper": "open_hello"
                     },
                     {
                         "ID": "ApproachObject",

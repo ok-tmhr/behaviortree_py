@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Set
 from enum import Enum, auto
-from typing import Self, Type
+from typing import AbstractSet, Self, Type
 
 
 class NodeStatus(Enum):
@@ -33,6 +34,11 @@ class TreeNode(ABC):
         if arg := kwargs.get(ID):
             return cls.__node_type[ID](arg, **kwargs)
         return cls.__node_type[ID](**kwargs)
+
+    @classmethod
+    def find_node_type(cls, keys: Set[str]):
+        if nt := keys & cls.__node_type.keys():
+            return set(nt).pop()
 
 
 class LeafNode(TreeNode):
@@ -116,8 +122,8 @@ class RetryUntilSuccessful(DecoratorNode):
 
 
 class ActionNodeBase(ActionNode):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, name: str | None = None, **kwargs):
+        super().__init__(name, **kwargs)
 
     def __init_subclass__(cls):
         super().register()
