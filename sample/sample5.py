@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     sample3
     bt_path = Path(__file__, "..", "bt/main_tree.json")
-    tree = BehaviorTreeFactory.create_tree(bt_path.as_posix())
+    tree = BehaviorTreeFactory.create_tree_from_file(bt_path.as_posix())
 
     status = NodeStatus.RUNNING
     while status == NodeStatus.RUNNING:

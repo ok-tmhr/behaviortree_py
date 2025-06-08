@@ -1,7 +1,7 @@
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .node import ControlNode, DecoratorNode, NodeStatus, TreeNode
 
@@ -15,6 +15,12 @@ class Tree:
         if self.root:
             return self.root.tick()
         raise AttributeError("No root found")
+
+    def tick_while_running(self):
+        status = self.tick()
+        while status == NodeStatus.RUNNING:
+            status = self.tick()
+        return status
 
 
 class BehaviorTreeFactory:
@@ -59,9 +65,15 @@ class BehaviorTreeFactory:
                         x.root = deepcopy(cls.tree[x.id_])
 
     @classmethod
-    def create_tree(cls, path: str):
+    def create_tree_from_file(cls, path: str):
         cls.bt_path = path
         with open(path, encoding="utf8") as f:
             json.load(f, object_hook=cls.json_hook)
         cls.resolve()
         return cls.tree[cls.main_tree_to_execute]
+
+    def register_simple_condition(self, ID: str, callback: Callable[[], NodeStatus]):
+        TreeNode.register_simple_condition(ID, callback)
+
+    def register_simple_action(self, ID: str, callback: Callable[[], NodeStatus]):
+        TreeNode.register_simple_action(ID, callback)

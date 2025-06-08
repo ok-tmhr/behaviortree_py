@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from collections.abc import Set
 from enum import Enum, auto
-from typing import Self, Type
+from functools import partial
+from typing import Callable, ClassVar, Protocol, Self, Type
 
 
 class NodeStatus(Enum):
@@ -10,8 +11,13 @@ class NodeStatus(Enum):
     RUNNING = auto()
 
 
+class Node(Protocol):
+    def __init__(self, name: str | None = None, **kwargs): ...
+    def tick(self) -> NodeStatus: ...
+
+
 class TreeNode(ABC):
-    __node_type: dict[str, Type[Self]] = {}
+    __node_type: ClassVar[dict[str, Type[Node]]] = {}
 
     def __init__(self, name: str | None = None, **kwargs):
         self.name = name or self.__class__.__name__
@@ -30,7 +36,7 @@ class TreeNode(ABC):
         return str(getattr(cls, f"_{cls.__name__}__id", cls.__name__))
 
     @classmethod
-    def create(cls, ID: str, **kwargs) -> Self:
+    def create(cls, ID: str, **kwargs) -> Node:
         if arg := kwargs.get(ID):
             return cls.__node_type[ID](arg, **kwargs)
         return cls.__node_type[ID](**kwargs)
@@ -39,6 +45,24 @@ class TreeNode(ABC):
     def find_node_type(cls, keys: Set[str]):
         if nt := keys & cls.__node_type.keys():
             return set(nt).pop()
+
+    @staticmethod
+    def register_simple_condition(ID: str, callback: Callable[[], NodeStatus]):
+        class SimpleCondition:
+            def __init__(self, name: str | None = None, **kwargs):
+                self.tick = callback
+                self.name = name or ID
+
+        TreeNode.__node_type[ID] = SimpleCondition
+
+    @staticmethod
+    def register_simple_action(ID: str, callback: Callable[[], NodeStatus]):
+        class SimpleAction:
+            def __init__(self, name: str | None = None, **kwargs):
+                self.tick = callback
+                self.name = name or ID
+
+        TreeNode.__node_type[ID] = SimpleAction
 
 
 class LeafNode(TreeNode):
