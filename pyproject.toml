@@ -1,0 +1,16 @@
+[project]
+classifiers = ["Typing :: Typed"]
+dependencies = [
+    "mypy>=1.16.0",
+]
+description = "The Python library to build Behavior Trees."
+name = "behaviortree-py"
+readme = "README.md"
+requires-python = ">=3.13"
+version = "0.1.0"
+
+[tool.hatchling.package-data]
+behaviortree_py = ["py.typed"]
+
+[tool.setuptools.package-data]
+behaviortree_py = ["py.typed"]

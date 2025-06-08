@@ -1,0 +1,34 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "BehaviorTree": {
+                "Sequence": [
+                    {
+                        "SaySomething": "Hello World"
+                    },
+                    {
+                        "SubTree": "GraspObject"
+                    }
+                ]
+            },
+            "ID": "MainTree"
+        },
+        {
+            "BehaviorTree": {
+                "Sequence": [
+                    {
+                        "OpenGripper": null
+                    },
+                    {
+                        "ApproachObject": null
+                    },
+                    {
+                        "CloseGripper": null
+                    }
+                ]
+            },
+            "ID": "GraspObject"
+        }
+    ]
+}

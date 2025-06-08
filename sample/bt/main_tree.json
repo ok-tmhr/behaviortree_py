@@ -1,0 +1,19 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        { "include": "grasp.json" },
+        {
+            "BehaviorTree": {
+                "Sequence": [
+                    {
+                        "SaySomething": "Hello World"
+                    },
+                    {
+                        "SubTree": "GraspObject"
+                    }
+                ]
+            },
+            "ID": "MainTree"
+        }
+    ]
+}
