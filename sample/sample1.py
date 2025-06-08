@@ -1,4 +1,4 @@
-from node import ActionNode, NodeStatus, SequenceNode
+from behaviortree_py.node import ActionNode, NodeStatus, SequenceNode
 
 
 class OpenFridge(ActionNode):
@@ -20,7 +20,7 @@ class CloseFridge(ActionNode):
 
 
 if __name__ == "__main__":
-    tree = SequenceNode(None, OpenFridge(), GrabBeer(), CloseFridge())
+    tree = SequenceNode([OpenFridge(), GrabBeer(), CloseFridge()])
     s = NodeStatus.RUNNING
     while s == NodeStatus.RUNNING:
         print("tick once")

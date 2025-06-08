@@ -1,6 +1,6 @@
 from random import random
 
-from node import (
+from behaviortree_py.node import (
     ActionNode,
     NodeStatus,
 )
@@ -37,21 +37,23 @@ class CloseDoor(ActionNode):
 
 
 if __name__ == "__main__":
-    from node import (
+    from behaviortree_py.node import (
         FallbackNode,
         RetryUntilSuccessful,
         SequenceNode,
     )
 
     tree = SequenceNode(
-        None,
-        FallbackNode(
-            None,
-            IsDoorOpen(),
-            RetryUntilSuccessful(None, OpenDoor(), num_attempts=5),
-        ),
-        EnterRoom(),
-        CloseDoor(),
+        [
+            FallbackNode(
+                [
+                    IsDoorOpen(),
+                    RetryUntilSuccessful(OpenDoor(), num_attempts=5),
+                ]
+            ),
+            EnterRoom(),
+            CloseDoor(),
+        ]
     )
 
     s = NodeStatus.RUNNING

@@ -2,7 +2,7 @@ import json
 from copy import deepcopy
 from typing import Any
 
-from node import ControlNode, DecoratorNode, NodeStatus, TreeNode
+from .node import ControlNode, DecoratorNode, NodeStatus, TreeNode
 
 
 class Tree:
@@ -64,19 +64,3 @@ class BehaviorTreeFactory:
             json.load(f, object_hook=cls.json_hook)
         cls.resolve()
         return cls.tree[cls.main_tree_to_execute]
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-
-    import bt
-
-    bt
-
-    path = Path(__file__).with_name("main_tree.json").resolve()
-    tree = BehaviorTreeFactory.create_tree(path.as_posix())
-    status = NodeStatus.RUNNING
-    while status == NodeStatus.RUNNING:
-        print("tick once")
-        status = tree.tick()
-    print("completed", status.name)

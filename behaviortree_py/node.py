@@ -4,11 +4,6 @@ from enum import Enum, auto
 from typing import Self, Type
 
 
-class NodeMeta(type):
-    def __isinstancecheck__(self, instance: object):
-        return callable(getattr(instance, "tick"))
-
-
 class NodeStatus(Enum):
     SUCCESS = auto()
     FAILURE = auto()
