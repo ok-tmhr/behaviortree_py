@@ -20,6 +20,7 @@ class BehaviorTreeFactory:
     tree: dict[str, Tree] = {}
     btcpp_format: int = 4
     main_tree_to_execute = "MainTree"
+    bt_path: str = ""
 
     @classmethod
     def json_hook(cls, obj: dict[str, Any]):
@@ -36,6 +37,10 @@ class BehaviorTreeFactory:
                 cls.btcpp_format = x
             case {"SubTree": x}:
                 return Tree(x, None)
+            case {"include": x}:
+                rel_path = Path(cls.bt_path).with_name(x)
+                with open(rel_path, encoding="utf8") as f:
+                    return json.load(f, object_hook=cls.json_hook)
             case _:
                 return obj
 
@@ -54,6 +59,7 @@ class BehaviorTreeFactory:
 
     @classmethod
     def create_tree(cls, path: str):
+        cls.bt_path = path
         with open(path, encoding="utf8") as f:
             json.load(f, object_hook=cls.json_hook)
         cls.resolve()
@@ -67,7 +73,7 @@ if __name__ == "__main__":
 
     bt
 
-    path = Path(__file__, "..", "subtrees.json").resolve()
+    path = Path(__file__).with_name("main_tree.json").resolve()
     tree = BehaviorTreeFactory.create_tree(path.as_posix())
     status = NodeStatus.RUNNING
     while status == NodeStatus.RUNNING:
