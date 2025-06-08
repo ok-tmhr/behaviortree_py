@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     from behaviortree_py.bt_factory import BehaviorTreeFactory
 
-    bt_path = Path(__file__).with_name("bt/schema.json")
+    bt_path = Path(__file__, "..", "bt/schema.json")
     tree = BehaviorTreeFactory.create_tree(bt_path.as_posix())
 
     status = NodeStatus.RUNNING

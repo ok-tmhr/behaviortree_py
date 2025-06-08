@@ -3,9 +3,11 @@ from behaviortree_py.node import NodeStatus
 if __name__ == "__main__":
     from pathlib import Path
 
+    import sample3
+
     from behaviortree_py.bt_factory import BehaviorTreeFactory
 
-    bt_path = Path(__file__).with_name("bt/subtrees.json")
+    bt_path = Path(__file__, "..", "bt/subtrees.json")
     tree = BehaviorTreeFactory.create_tree(bt_path.as_posix())
 
     status = NodeStatus.RUNNING
