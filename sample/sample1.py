@@ -1,26 +1,27 @@
-from behaviortree_py.node import ActionNode, NodeStatus, SequenceNode
+from behaviortree_py.control import Sequence
+from behaviortree_py.node2 import ActionNodeBase, NodeStatus
 
 
-class OpenFridge(ActionNode):
+class OpenFridge(ActionNodeBase):
     def tick(self):
         print("Open fridge")
         return NodeStatus.SUCCESS
 
 
-class GrabBeer(ActionNode):
+class GrabBeer(ActionNodeBase):
     def tick(self):
         print("Grab beer")
         return NodeStatus.SUCCESS
 
 
-class CloseFridge(ActionNode):
+class CloseFridge(ActionNodeBase):
     def tick(self):
         print("Close fridge")
         return NodeStatus.SUCCESS
 
 
 if __name__ == "__main__":
-    tree = SequenceNode([OpenFridge(), GrabBeer(), CloseFridge()])
+    tree = Sequence([OpenFridge(), GrabBeer(), CloseFridge()])
     s = NodeStatus.RUNNING
     while s == NodeStatus.RUNNING:
         print("tick once")

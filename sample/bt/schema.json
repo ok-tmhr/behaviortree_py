@@ -6,18 +6,22 @@
                 "name": "root_sequence",
                 "Sequence": [
                     {
+                        "Action": null,
                         "ID": "SaySomething",
                         "message": "Hello",
                         "name": "action_hello"
                     },
                     {
-                        "OpenGripper": "open_hello"
+                        "OpenGripper": null,
+                        "name": "open_hello"
                     },
                     {
+                        "Action": null,
                         "ID": "ApproachObject",
                         "name": "approach_object"
                     },
                     {
+                        "Action": null,
                         "ID": "CloseGripper",
                         "name": "close_gripper"
                     }

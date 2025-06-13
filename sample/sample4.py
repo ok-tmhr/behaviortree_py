@@ -1,4 +1,4 @@
-from behaviortree_py.node import NodeStatus
+from behaviortree_py.node2 import NodeStatus
 
 if __name__ == "__main__":
     from pathlib import Path

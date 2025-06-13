@@ -1,13 +1,10 @@
-from behaviortree_py.node import ActionNodeBase, NodeStatus
+from behaviortree_py.node2 import ActionNodeBase, NodeStatus
 
 
 class SaySomething(ActionNodeBase):
-    def __init__(self, message: str, **kwargs):
-        super().__init__(**kwargs)
-        self.message = message
-
     def tick(self):
-        print(self.message)
+        message = str(self.get_input("message", None))
+        print(message)
         return NodeStatus.SUCCESS
 
 

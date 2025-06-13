@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Set
 from enum import Enum, auto
 from functools import partial
-from typing import Callable, ClassVar, Protocol, Self, Type
+from typing import Any, Callable, ClassVar, Protocol, Self, Type, TypeGuard
 
 
 class NodeStatus(Enum):
@@ -12,7 +12,11 @@ class NodeStatus(Enum):
 
 
 class Node(Protocol):
-    def __init__(self, name: str | None = None, **kwargs): ...
+    parent: Self
+    name: str
+
+    def __init__(self, name: str, **kwargs): ...
+
     def tick(self) -> NodeStatus: ...
 
 
@@ -21,6 +25,7 @@ class TreeNode(ABC):
 
     def __init__(self, name: str | None = None, **kwargs):
         self.name = name or self.__class__.__name__
+        self.port = Port()
 
     @abstractmethod
     def tick(self) -> NodeStatus:
@@ -145,13 +150,41 @@ class RetryUntilSuccessful(DecoratorNode):
         return s
 
 
+class Blackboard:
+    def __init__(self) -> None:
+        self._data: dict[str, Any] = {}
+
+    def get_input(self, key: str):
+        return self._data[key]
+
+    def set_output(self, key: str, value: Any):
+        self._data[key] = value
+
+
+class Port:
+    def __init__(self, board: Blackboard, data: dict[str, Any]):
+        self._data = data
+        self._board = board
+
+    def get_input(self, port_name: str, default: Any):
+        value = self._data.get(port_name, default)
+        if self.closed(value):
+            return self._board.get_input(value[1:-1])
+        return value
+
+    def set_output(self, port_name: str, value: Any):
+        key = self._data.get(port_name)
+        if isinstance(key, str) and self.closed(key):
+            self._board.set_output(key[1:-1], value)
+
+    @staticmethod
+    def closed(value: Any, closure="{}") -> TypeGuard[str]:
+        return isinstance(value, str) and value[:: len(value) - 1] == closure
+
+
 class ActionNodeBase(ActionNode):
     def __init__(self, name: str | None = None, **kwargs):
         super().__init__(name, **kwargs)
 
     def __init_subclass__(cls):
         super().register()
-
-
-class Blackboard:
-    pass
