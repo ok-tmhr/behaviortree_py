@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from collections.abc import Set
 from enum import Enum, auto
-from functools import partial
-from typing import Any, Callable, ClassVar, Protocol, Self, Type, TypeGuard
+from typing import Any, Callable, ClassVar, Protocol, TypeGuard, runtime_checkable
+
+from .bt import Port
 
 
 class NodeStatus(Enum):
@@ -11,180 +11,157 @@ class NodeStatus(Enum):
     RUNNING = auto()
 
 
+@runtime_checkable
 class Node(Protocol):
-    parent: Self
-    name: str
-
-    def __init__(self, name: str, **kwargs): ...
+    parent: "Node"
 
     def tick(self) -> NodeStatus: ...
 
+    def get_tree_id(self) -> str: ...
 
-class TreeNode(ABC):
-    __node_type: ClassVar[dict[str, Type[Node]]] = {}
 
-    def __init__(self, name: str | None = None, **kwargs):
+class NodeLibrary:
+    _node_type: ClassVar[dict[str, type[Node]]] = {}
+
+    @classmethod
+    def register_node_type(cls, node_type: type[Node]):
+        alias = getattr(node_type, f"_{node_type.__name__}__alias", node_type.__name__)
+        if isinstance(alias, str):
+            cls._node_type[alias] = node_type
+        else:
+            for name in alias:
+                cls._node_type[name] = node_type
+
+    @classmethod
+    def create_node(cls, **kwargs):
+        type_name = kwargs.keys() & cls._node_type
+        match len(type_name):
+            case 0:
+                raise IndexError(
+                    f"Node type not found in {kwargs}. Registered types are {[key for key in cls._node_type]}"
+                )
+            case 1:
+                id_ = type_name.pop()
+                print(kwargs)
+                return cls._node_type[id_](kwargs.get(id_), **kwargs)
+            case _:
+                raise ValueError(f"Multiple node type found. {type_name}")
+
+    @classmethod
+    def get_node_type(cls, ID: str):
+        return cls._node_type[ID]
+
+    @classmethod
+    def register_simple_action(cls, ID: str, callback: Callable[[], NodeStatus]):
+        class SimpleAction:
+            __alias = ID
+            parent: Node
+
+            def __init__(self, name: str | None = None, **kwargs):
+                self.tick = callback
+                self.name = name or ID
+                self._port = kwargs
+
+            def get_tree_id(self) -> str:
+                return self.parent.get_tree_id()
+
+        cls.register_node_type(SimpleAction)
+
+
+class NodeBase(ABC):
+    parent: Node
+    _tree_id: str
+
+    def __init__(self, child: None, name: str | None = None, **kwargs):
         self.name = name or self.__class__.__name__
-        self.port = Port()
+        self._port = kwargs
 
     @abstractmethod
-    def tick(self) -> NodeStatus:
-        pass
+    def tick(self) -> NodeStatus: ...
 
-    @classmethod
-    def register(cls):
-        print("register", cls.get_id(), cls.__name__)
-        TreeNode.__node_type[cls.get_id()] = cls
+    def get_input(self, port: str, default: Any) -> Any:
+        return Port(self.get_tree_id(), self._port).get_input(port, default)
 
-    @classmethod
-    def get_id(cls) -> str:
-        return str(getattr(cls, f"_{cls.__name__}__id", cls.__name__))
+    def set_output(self, port: str, value: Any) -> None:
+        Port(self.get_tree_id(), self._port).set_output(port, value)
 
-    @classmethod
-    def create(cls, ID: str, **kwargs) -> Node:
-        if arg := kwargs.get(ID):
-            return cls.__node_type[ID](arg, **kwargs)
-        return cls.__node_type[ID](**kwargs)
-
-    @classmethod
-    def find_node_type(cls, keys: Set[str]):
-        if nt := keys & cls.__node_type.keys():
-            return set(nt).pop()
-
-    @staticmethod
-    def register_simple_condition(ID: str, callback: Callable[[], NodeStatus]):
-        class SimpleCondition:
-            def __init__(self, name: str | None = None, **kwargs):
-                self.tick = callback
-                self.name = name or ID
-
-        TreeNode.__node_type[ID] = SimpleCondition
-
-    @staticmethod
-    def register_simple_action(ID: str, callback: Callable[[], NodeStatus]):
-        class SimpleAction:
-            def __init__(self, name: str | None = None, **kwargs):
-                self.tick = callback
-                self.name = name or ID
-
-        TreeNode.__node_type[ID] = SimpleAction
+    def get_tree_id(self) -> str:
+        if not hasattr(self, "_tree_id"):
+            self._tree_id = self.parent.get_tree_id()
+        return self._tree_id
 
 
-class LeafNode(TreeNode):
-    pass
+class TreeNode(NodeBase):
+    __alias = "BehaviorTree"
+    parent: Node
 
-
-class ActionNode(LeafNode):
-    pass
-
-
-class DecoratorNode(TreeNode):
-    def __init__(self, child: TreeNode, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, child: Node, ID: str, name=None, **kwargs):
+        super().__init__(name, **kwargs)
+        self.parent = self
         self.child = child
+        self._tree_id = ID
 
-    def __init_subclass__(cls):
-        super().register()
+        self.child.parent = self
+
+    def tick(self) -> NodeStatus:
+        return self.child.tick()
+
+    def tick_while_running(self):
+        status = self.tick()
+        while status == NodeStatus.RUNNING:
+            status = self.tick()
+        return status
+
+    def get_tree_id(self) -> str:
+        if self._tree_id is None:
+            raise ValueError("Tree ID not assigned")
+        return self._tree_id
 
 
-class ControlNode(TreeNode):
-    __id = "Control"
-
-    def __init__(self, children: list[TreeNode], **kwargs):
-        super().__init__(**kwargs)
+class ControlNode(NodeBase):
+    def __init__(self, children: list[Node], name: str | None = None, **kwargs):
+        super().__init__(None, name, **kwargs)
         self.children = children
         self._index = 0
 
-    def __init_subclass__(cls):
-        super().register()
-
-
-class ConditionNode(LeafNode):
-    pass
-
-
-class SequenceNode(ControlNode):
-    __id = "Sequence"
-
-    def tick(self) -> NodeStatus:
-        s = self.children[self._index].tick()
-        if s == NodeStatus.SUCCESS and self._index < len(self.children) - 1:
-            self._index += 1
-            return NodeStatus.RUNNING
-        return s
-
-
-class FallbackNode(ControlNode):
-    __id = "Fallback"
-
-    def tick(self) -> NodeStatus:
-        s = self.children[self._index].tick()
-        if s == NodeStatus.FAILURE and self._index < len(self.children) - 1:
-            self._index += 1
-            return NodeStatus.RUNNING
-        return s
-
-
-class Inverter(DecoratorNode):
-    def tick(self) -> NodeStatus:
-        match self.child.tick():
-            case NodeStatus.SUCCESS:
-                return NodeStatus.FAILURE
-            case NodeStatus.FAILURE:
-                return NodeStatus.SUCCESS
-            case s:
-                return s
-
-
-class RetryUntilSuccessful(DecoratorNode):
-    def __init__(self, child: TreeNode, num_attempts: int, **kwargs):
-        super().__init__(child, **kwargs)
-        self.num_attempts = num_attempts
-        self._attempt = 0
-
-    def tick(self) -> NodeStatus:
-        self._attempt += 1
-        s = self.child.tick()
-        if s == NodeStatus.FAILURE and self._attempt < self.num_attempts:
-            return NodeStatus.RUNNING
-        return s
-
-
-class Blackboard:
-    def __init__(self) -> None:
-        self._data: dict[str, Any] = {}
-
-    def get_input(self, key: str):
-        return self._data[key]
-
-    def set_output(self, key: str, value: Any):
-        self._data[key] = value
-
-
-class Port:
-    def __init__(self, board: Blackboard, data: dict[str, Any]):
-        self._data = data
-        self._board = board
-
-    def get_input(self, port_name: str, default: Any):
-        value = self._data.get(port_name, default)
-        if self.closed(value):
-            return self._board.get_input(value[1:-1])
-        return value
-
-    def set_output(self, port_name: str, value: Any):
-        key = self._data.get(port_name)
-        if isinstance(key, str) and self.closed(key):
-            self._board.set_output(key[1:-1], value)
-
-    @staticmethod
-    def closed(value: Any, closure="{}") -> TypeGuard[str]:
-        return isinstance(value, str) and value[:: len(value) - 1] == closure
-
-
-class ActionNodeBase(ActionNode):
-    def __init__(self, name: str | None = None, **kwargs):
-        super().__init__(name, **kwargs)
+        for c in self.children:
+            c.parent = self
 
     def __init_subclass__(cls):
-        super().register()
+        return NodeLibrary.register_node_type(cls)
+
+
+class DecoratorNode(NodeBase):
+    def __init__(self, child: Node, name: str | None = None, **kwargs):
+        super().__init__(None, name, **kwargs)
+        self.child = child
+        self.child.parent = self
+
+    def __init_subclass__(cls):
+        return NodeLibrary.register_node_type(cls)
+
+
+class ActionNode(NodeBase):
+    __alias = "Action"
+
+    def __new__(cls, child: None, ID: str, name=None, **kwargs):
+        node_type = NodeLibrary.get_node_type(ID)
+        self = super().__new__(node_type)
+        self.name = name or node_type.__name__
+        self._port = kwargs
+        return self
+
+    def __init__(self, child: None, ID: str, name=None, **kwargs):
+        pass
+
+    def tick(self):
+        return super().tick()
+
+
+class ActionNodeBase(NodeBase):
+    def __init_subclass__(cls):
+        NodeLibrary.register_node_type(cls)
+
+
+NodeLibrary.register_node_type(TreeNode)
+NodeLibrary.register_node_type(ActionNode)
