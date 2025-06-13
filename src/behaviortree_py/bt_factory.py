@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import control, decorator
-from .node2 import ControlNode, DecoratorNode, Node, NodeLibrary, NodeStatus, TreeNode
+from .node import ControlNode, DecoratorNode, Node, NodeLibrary, NodeStatus, TreeNode
 
 # class Tree:
 #     def __init__(self, ID: str, root: TreeNode | None):

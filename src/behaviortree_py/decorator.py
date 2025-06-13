@@ -1,4 +1,4 @@
-from .node2 import DecoratorNode, Node, NodeStatus
+from .node import DecoratorNode, Node, NodeStatus
 
 
 class Inverter(DecoratorNode):

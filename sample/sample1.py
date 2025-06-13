@@ -1,5 +1,5 @@
 from behaviortree_py.control import Sequence
-from behaviortree_py.node2 import ActionNodeBase, NodeStatus
+from behaviortree_py.node import ActionNodeBase, NodeStatus
 
 
 class OpenFridge(ActionNodeBase):

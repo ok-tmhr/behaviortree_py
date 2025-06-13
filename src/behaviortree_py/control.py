@@ -1,4 +1,4 @@
-from .node2 import ControlNode, NodeStatus
+from .node import ControlNode, NodeStatus
 
 
 class Sequence(ControlNode):
