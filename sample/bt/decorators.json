@@ -1,0 +1,26 @@
+{
+    "BTCPP_format": 4,
+    "root": {
+        "BehaviorTree": {
+            "Sequence": [
+                {
+                    "Fallback": [
+                        {
+                            "Inverter": {
+                                "IsDoorOpen": null
+                            }
+                        },
+                        {
+                            "RetryUntilSuccessful": {
+                                "OpenDoor": null
+                            },
+                            "num_attempts": 5
+                        }
+                    ]
+                },
+                { "EnterRoom": null },
+                { "CloseDoor": null }
+            ]
+        }
+    }
+}

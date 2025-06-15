@@ -1,4 +1,4 @@
-from .node import DecoratorNode, Node, NodeStatus
+from .node import DecoratorNode, NodeStatus, TreeNode
 
 
 class Inverter(DecoratorNode):
@@ -15,7 +15,7 @@ class Inverter(DecoratorNode):
 class RetryUntilSuccessful(DecoratorNode):
     num_attempts: int
 
-    def __init__(self, child: Node, name: str | None = None, **kwargs):
+    def __init__(self, child: TreeNode, name: str | None = None, **kwargs):
         super().__init__(child, name, **kwargs)
         self._attempt = 0
 

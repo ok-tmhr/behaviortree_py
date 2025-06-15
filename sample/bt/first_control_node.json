@@ -1,0 +1,12 @@
+{
+    "BTCPP_format": 4,
+    "root": {
+        "BehaviorTree": {
+            "Sequence": [
+                { "OpenFridge": null },
+                { "GrabBeer": null },
+                { "CloseFridge": null }
+            ]
+        }
+    }
+}
