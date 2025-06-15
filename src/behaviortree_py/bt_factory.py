@@ -60,13 +60,8 @@ class BehaviorTreeFactory:
             case {"include": x}:
                 include_path = Path(x)
                 if include_path.is_absolute():
-                    cls.bt_path = include_path
-                    with cls.bt_path.open(encoding="utf8") as f:
-                        return json.load(f, object_hook=cls.json_hook)
-                else:
-                    cls.bt_path = cls.bt_path.parent / include_path
-                    with Path(cls.bt_path).open(encoding="utf8") as f:
-                        return json.load(f, object_hook=cls.json_hook)
+                    return cls.load_tree_from_json(include_path)
+                return cls.load_tree_from_json(cls.bt_path.parent / include_path)
             case {"BTCPP_format": x}:
                 cls.btcpp_format = x
             case {"BehaviorTree": x, "ID": y}:
@@ -91,10 +86,14 @@ class BehaviorTreeFactory:
                         pass
 
     @classmethod
-    def create_tree_from_file(cls, path: str):
+    def load_tree_from_json(cls, path: str | Path):
         cls.bt_path = Path(path)
         with open(path, encoding="utf8") as f:
-            json.load(f, object_hook=cls.json_hook)
+            return json.load(f, object_hook=cls.json_hook)
+
+    @classmethod
+    def create_tree_from_file(cls, path: str):
+        cls.load_tree_from_json(path)
         cls.resolve()
         if len(cls.tree) == 1:
             return cls.tree.popitem()[1]
