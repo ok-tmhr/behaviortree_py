@@ -36,8 +36,8 @@ class NodeBase(ABC):
     @abstractmethod
     def tick(self) -> NodeStatus: ...
 
-    def get_input(self, port: str, default: Any):
-        return Port(self.tree_id, self._port).get_input(port, default)
+    def get_input(self, port: str, default: Any, expected: type):
+        return Port(self.tree_id, self._port).get_input(port, default, expected)
 
     def set_output(self, port: str, value: Any) -> None:
         Port(self.tree_id, self._port).set_output(port, value)
@@ -146,3 +146,12 @@ class SyncActionNode(NodeBase):
 
     def __init_subclass__(cls):
         NodeLibrary.register_node_type(cls)
+
+
+class Script(NodeBase):
+    def tick(self):
+        code = str(self._port.pop("code"))
+        key, value = code.split(":=")
+        self._port["code"] = "{" + key + "}"
+        self.set_output("code", value)
+        return NodeStatus.SUCCESS

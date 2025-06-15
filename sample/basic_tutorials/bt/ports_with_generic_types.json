@@ -1,0 +1,29 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "ID": "MainTree",
+            "BehaviorTree": {
+                "name": "root",
+                "Sequence": [
+                    {
+                        "CalculateGoal": null,
+                        "goal": "{GoalPosition}"
+                    },
+                    {
+                        "PrintTarget": null,
+                        "target": "{GoalPosition}"
+                    },
+                    {
+                        "Script": null,
+                        "code": "OtherGoal:='-1;3'"
+                    },
+                    {
+                        "PrintTarget": null,
+                        "target": "{OtherGoal}"
+                    }
+                ]
+            }
+        }
+    ]
+}

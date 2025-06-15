@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, TypeGuard
+from typing import Any, Protocol, TypeGuard
 
 
 class Blackboard:
@@ -19,16 +19,20 @@ class Port:
         self._data = data
         self._id = tree_id
 
-    def get_input(self, port_name: str, default: Any):
+    def get_input(self, port_name: str, default: Any, expected: type = type(None)):
         value = self._data.get(port_name, default)
         if self.closed(value):
-            return Blackboard.get_input(self._id, value[1:-1])
+            value = Blackboard.get_input(self._id, value[1:-1])
+        if self.closed(value, "''"):
+            return expected.convert_from_string(value.strip("'"))
         return value
 
     def set_output(self, port_name: str, value: Any):
         key = self._data.get(port_name)
-        if isinstance(key, str) and self.closed(key):
+        if self.closed(key):
             Blackboard.set_output(self._id, key[1:-1], value)
+        elif isinstance(key, str) and self.closed(value, "''"):
+            Blackboard.set_output(self._id, key, value)
 
     @staticmethod
     def closed(value: Any, closure="{}") -> TypeGuard[str]:
