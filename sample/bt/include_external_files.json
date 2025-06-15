@@ -9,7 +9,8 @@
                         "SaySomething": "Hello World"
                     },
                     {
-                        "SubTree": "GraspObject"
+                        "SubTree": null,
+                        "ID": "GraspObject"
                     }
                 ]
             },
