@@ -1,26 +1,26 @@
-from behaviortree_py.node import ActionNodeBase, NodeStatus
+from behaviortree_py.node import NodeStatus, SyncActionNode
 
 
-class SaySomething(ActionNodeBase):
+class SaySomething(SyncActionNode):
     def tick(self):
         message = str(self.get_input("message", None))
         print(message)
         return NodeStatus.SUCCESS
 
 
-class OpenGripper(ActionNodeBase):
+class OpenGripper(SyncActionNode):
     def tick(self):
         print("open gripper")
         return NodeStatus.SUCCESS
 
 
-class ApproachObject(ActionNodeBase):
+class ApproachObject(SyncActionNode):
     def tick(self):
         print("approach object")
         return NodeStatus.SUCCESS
 
 
-class CloseGripper(ActionNodeBase):
+class CloseGripper(SyncActionNode):
     def tick(self):
         print("close gripper")
         return NodeStatus.SUCCESS
