@@ -13,15 +13,14 @@ class Inverter(DecoratorNode):
 
 
 class RetryUntilSuccessful(DecoratorNode):
-    num_attempts: int
-
     def __init__(self, child: TreeNode, name: str | None = None, **kwargs):
         super().__init__(child, name, **kwargs)
         self._attempt = 0
 
     def tick(self) -> NodeStatus:
         self._attempt += 1
+        num_attempts: int = self.get_input("num_attempts", 5)
         s = self.child.tick()
-        if s == NodeStatus.FAILURE and self._attempt < self.num_attempts:
+        if s == NodeStatus.FAILURE and self._attempt < num_attempts:
             return NodeStatus.RUNNING
         return s

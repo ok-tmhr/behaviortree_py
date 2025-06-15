@@ -18,7 +18,7 @@ class Tree(NodeBase):
     __alias = "BehaviorTree", "SubTree"
     child: TreeNode
 
-    def __init__(self, root: TreeNode, ID: str = "", name: str | None = None, **kwargs):
+    def __init__(self, root: TreeNode, ID: str, name: str | None = None, **kwargs):
         super().__init__(root, name, **kwargs)
         self._tree_id = ID
         self.child.parent = self

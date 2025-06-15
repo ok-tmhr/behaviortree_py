@@ -1,6 +1,7 @@
 {
     "BTCPP_format": 4,
     "root": {
+        "ID": "MainTree",
         "BehaviorTree": {
             "Sequence": [
                 { "OpenFridge": null },

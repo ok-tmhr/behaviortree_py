@@ -1,7 +1,7 @@
 import inspect
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import Any, Callable, ClassVar, Protocol, runtime_checkable
+from typing import Any, Callable, ClassVar, Protocol, TypeGuard, runtime_checkable
 
 from .bt import Port
 
@@ -18,6 +18,7 @@ class TreeNode(Protocol):
 
     def tick(self) -> NodeStatus: ...
 
+    @property
     def tree_id(self) -> str: ...
 
 
@@ -35,15 +36,16 @@ class NodeBase(ABC):
     @abstractmethod
     def tick(self) -> NodeStatus: ...
 
-    def get_input(self, port: str, default: Any) -> Any:
-        return Port(self.tree_id(), self._port).get_input(port, default)
+    def get_input(self, port: str, default: Any):
+        return Port(self.tree_id, self._port).get_input(port, default)
 
     def set_output(self, port: str, value: Any) -> None:
-        Port(self.tree_id(), self._port).set_output(port, value)
+        Port(self.tree_id, self._port).set_output(port, value)
 
+    @property
     def tree_id(self) -> str:
         if not self._tree_id:
-            self._tree_id = self.parent.tree_id()
+            self._tree_id = self.parent.tree_id
         return self._tree_id
 
     def __init_subclass__(cls):
@@ -63,8 +65,8 @@ class NodeLibrary:
             case str():
                 cls._node_type[node_key] = node_type
             case _:
-                for k in node_key:
-                    cls._node_type[k] = node_type
+                for key in node_key:
+                    cls._node_type[key] = node_type
 
     @classmethod
     def create_node(cls, **kwargs):
