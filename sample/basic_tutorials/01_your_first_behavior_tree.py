@@ -1,7 +1,7 @@
-from behaviortree_py.node import ActionNodeBase, NodeStatus
+from behaviortree_py.node import NodeStatus, SyncActionNode
 
 
-class ApproachObject(ActionNodeBase):
+class ApproachObject(SyncActionNode):
     def tick(self):
         print(self.__class__.__name__ + ":", self.name)
         return NodeStatus.SUCCESS
@@ -37,7 +37,9 @@ if __name__ == "__main__":
     gripper = GripperInterface()
     factory.register_simple_action("OpenGripper", gripper.open)
     factory.register_simple_action("CloseGripper", gripper.close)
-    bt_path = Path(__file__, "..", "bt/my_tree.json").resolve().as_posix()
+    bt_path = (
+        Path(__file__, "..", "bt/your_first_behavior_tree.json").resolve().as_posix()
+    )
     tree = factory.create_tree_from_file(bt_path)
 
     tree.tick_while_running()

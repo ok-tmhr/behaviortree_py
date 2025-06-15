@@ -1,0 +1,17 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "ID": "MainTree",
+            "BehaviorTree": {
+                "name": "root_sequence",
+                "Sequence": [
+                    { "CheckBattery": null, "name": "check_battery" },
+                    { "OpenGripper": null, "name": "open_gripper" },
+                    { "ApproachObject": null, "name": "approach_object" },
+                    { "CloseGripper": null, "name": "close_gripper" }
+                ]
+            }
+        }
+    ]
+}

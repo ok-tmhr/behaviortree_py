@@ -85,6 +85,7 @@ class NodeLibrary:
     def register_simple_action(cls, ID: str, callback: Callable[[], NodeStatus]):
         class SimpleAction:
             parent: TreeNode
+            __alias = ID
 
             def __init__(self, child=None, name: str | None = None, **kwargs):
                 self.tick = callback
@@ -93,10 +94,6 @@ class NodeLibrary:
             @property
             def tree_id(self):
                 return self.parent.tree_id
-
-            @classmethod
-            def node_key(cls):
-                return ID
 
         cls.register_node_type(SimpleAction)
 

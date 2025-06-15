@@ -1,14 +1,16 @@
-from behaviortree_py.node import ActionNodeBase, NodeStatus
+from behaviortree_py.node import NodeStatus, SyncActionNode
 
 
-class SaySomething(ActionNodeBase):
+class SaySomething(SyncActionNode):
     def tick(self):
-        print("Robot says:", self.message)
+        message = self.get_input("message", "Nothing to say")
+        print("Robot says:", message)
         return NodeStatus.SUCCESS
 
 
-class ThinkWhatToSay(ActionNodeBase):
+class ThinkWhatToSay(SyncActionNode):
     def tick(self):
+        self.set_output("text", "The answer is 42")
         return NodeStatus.SUCCESS
 
 
@@ -21,3 +23,6 @@ if __name__ == "__main__":
 
     tree = BehaviorTreeFactory.create_tree_from_file(bt_file.as_posix())
     tree.tick_while_running()
+
+    # Robot says: hello
+    # Robot says: The answer is 42
