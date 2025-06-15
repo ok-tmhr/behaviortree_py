@@ -1,7 +1,7 @@
 import inspect
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import Any, Callable, ClassVar, Protocol, TypeGuard, runtime_checkable
+from typing import Any, Callable, ClassVar, Protocol, runtime_checkable
 
 from .bt import Port
 
@@ -61,12 +61,7 @@ class NodeLibrary:
         node_key = getattr(
             node_type, f"_{node_type.__name__}__alias", node_type.__name__
         )
-        match node_key:
-            case str():
-                cls._node_type[node_key] = node_type
-            case _:
-                for key in node_key:
-                    cls._node_type[key] = node_type
+        cls._node_type[node_key] = node_type
 
     @classmethod
     def create_node(cls, **kwargs):

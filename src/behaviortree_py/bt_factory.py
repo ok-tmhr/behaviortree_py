@@ -15,11 +15,11 @@ from .node import (
 
 
 class Tree(NodeBase):
-    __alias = "BehaviorTree", "SubTree"
+    __alias = "BehaviorTree"
     child: TreeNode
 
-    def __init__(self, root: TreeNode, ID: str, name: str | None = None, **kwargs):
-        super().__init__(root, name, **kwargs)
+    def __init__(self, child: TreeNode, ID: str, name: str | None = None, **kwargs):
+        super().__init__(child, name, **kwargs)
         self._tree_id = ID
         self.child.parent = self
 
@@ -31,6 +31,21 @@ class Tree(NodeBase):
         while status == NodeStatus.RUNNING:
             status = self.tick()
         return status
+
+
+class SubTree(NodeBase):
+    child: TreeNode
+
+    def __init__(self, child: TreeNode, ID: str, name: str | None = None, **kwargs):
+        super().__init__(None, name, **kwargs)
+        self._tree_id = ID
+
+    def tick(self) -> NodeStatus:
+        return self.child.tick()
+
+    def update(self, child: TreeNode):
+        self.child = deepcopy(child)
+        self.child.parent = self
 
 
 class BehaviorTreeFactory:
@@ -48,38 +63,26 @@ class BehaviorTreeFactory:
                     return json.load(f, object_hook=cls.json_hook)
             case {"BTCPP_format": x}:
                 cls.btcpp_format = x
-            case {"BehaviorTree": x}:
-                y = obj.get("ID")
+            case {"BehaviorTree": x, "ID": y}:
                 cls.tree[y] = NodeLibrary.create_node(**obj)
                 return cls.tree[y]
-            case {"SubTree": x, "ID": y}:
-                NodeLibrary.register_simple_action(
-                    y + "-SubTree", lambda: NodeStatus.SUCCESS
-                )
-                child = NodeLibrary.create_node(child=None, ID=y + "-SubTree")
-                return NodeLibrary.create_node(child=child, **obj)
             case _:
                 return NodeLibrary.create_node(**obj)
 
     @classmethod
     def resolve(cls):
-        pass
-        # parent: Node | None = None
-        # for t in cls.tree.values():
-        #     stack: list[Node] = [t]
-        #     while stack:
-        #         match x := stack.pop():
-        #             case ControlNode():
-        #                 stack.extend(x.children)
-        #                 parent = x
-        #             case DecoratorNode():
-        #                 stack.append(x.child)
-        #                 parent = x
-        #             case TreeNode():
-        #                 if parent:
-        #                     parent.child = deepcopy(cls.tree[x._tree_id])
-        #             case _:
-        #                 pass
+        for t in cls.tree.values():
+            stack = [t.child]
+            while stack:
+                match x := stack.pop():
+                    case ControlNode():
+                        stack.extend(x.child)
+                    case DecoratorNode():
+                        stack.append(x.child)
+                    case SubTree():
+                        x.update(cls.tree[x.tree_id])
+                    case _:
+                        pass
 
     @classmethod
     def create_tree_from_file(cls, path: str):

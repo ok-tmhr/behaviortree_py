@@ -12,7 +12,8 @@
                         "name": "action_hello"
                     },
                     {
-                        "OpenGripper": null,
+                        "Action": null,
+                        "ID": "OpenGripper",
                         "name": "open_hello"
                     },
                     {
