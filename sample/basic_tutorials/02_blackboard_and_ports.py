@@ -3,7 +3,7 @@ from behaviortree_py.node import NodeStatus, SyncActionNode
 
 class SaySomething(SyncActionNode):
     def tick(self):
-        message = self.get_input("message", "Nothing to say")
+        message = self.get_input("message", "Nothing to say", str).value
         print("Robot says:", message)
         return NodeStatus.SUCCESS
 

@@ -25,7 +25,7 @@ class CalculateGoal(SyncActionNode):
 
 class PrintTarget(SyncActionNode):
     def tick(self):
-        target = self.get_input("target", None, Position2D)
+        target = self.get_input("target", None, Position2D).value
         if target is None:
             raise ValueError("error reading port [target]")
         print(f"Target positions: [ {target.x}, {target.y} ]")

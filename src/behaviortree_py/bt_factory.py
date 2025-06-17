@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import control, decorator
+from .bt import Blackboard, NodeConfig
 from .node import (
     ControlNode,
     DecoratorNode,
@@ -18,9 +19,11 @@ class Tree(NodeBase):
     __alias = "BehaviorTree"
     child: TreeNode
 
-    def __init__(self, child: TreeNode, ID: str, name: str | None = None, **kwargs):
-        super().__init__(child, name, **kwargs)
-        self._tree_id = ID
+    def __init__(
+        self, child: TreeNode, ID: str, name=None, config=NodeConfig(), **kwargs
+    ):
+        super().__init__(child, name, config, **kwargs)
+        self._id = ID
         self.child.parent = self
 
     def tick(self) -> NodeStatus:
@@ -36,9 +39,11 @@ class Tree(NodeBase):
 class SubTree(NodeBase):
     child: TreeNode
 
-    def __init__(self, child: TreeNode, ID: str, name: str | None = None, **kwargs):
-        super().__init__(None, name, **kwargs)
-        self._tree_id = ID
+    def __init__(
+        self, child: TreeNode, ID: str, name=None, config=NodeConfig(), **kwargs
+    ):
+        super().__init__(None, name, config, **kwargs)
+        self._id = ID
 
     def tick(self) -> NodeStatus:
         return self.child.tick()
@@ -50,12 +55,12 @@ class SubTree(NodeBase):
 
 class BehaviorTreeFactory:
     tree: dict[str, Tree] = {}
-    btcpp_format: int = 4
+    btcpp_format = 4
     main_tree_to_execute = "MainTree"
     bt_path: Path
 
     @classmethod
-    def json_hook(cls, obj: dict[str, Any]):
+    def json_hook(cls, obj: dict[str, Any], config: NodeConfig):
         match obj:
             case {"include": x}:
                 include_path = Path(x)
@@ -65,10 +70,10 @@ class BehaviorTreeFactory:
             case {"BTCPP_format": x}:
                 cls.btcpp_format = x
             case {"BehaviorTree": x, "ID": y}:
-                cls.tree[y] = NodeLibrary.create_node(**obj)
+                cls.tree[y] = NodeLibrary.create_node(**obj, config=config)
                 return cls.tree[y]
             case _:
-                return NodeLibrary.create_node(**obj)
+                return NodeLibrary.create_node(**obj, config=config)
 
     @classmethod
     def resolve(cls):
@@ -81,7 +86,7 @@ class BehaviorTreeFactory:
                     case DecoratorNode():
                         stack.append(x.child)
                     case SubTree():
-                        x.update(cls.tree[x.tree_id])
+                        x.update(cls.tree[x._id])
                     case _:
                         pass
 
@@ -89,7 +94,7 @@ class BehaviorTreeFactory:
     def load_tree_from_json(cls, path: str | Path):
         cls.bt_path = Path(path)
         with open(path, encoding="utf8") as f:
-            return json.load(f, object_hook=cls.json_hook)
+            return json.load(f, object_hook=lambda x: cls.json_hook(x, NodeConfig()))
 
     @classmethod
     def create_tree_from_file(cls, path: str):

@@ -1,39 +1,92 @@
 from collections import defaultdict
-from typing import Any, Protocol, TypeGuard
+from typing import Any, Protocol, Self, TypeGuard, runtime_checkable
+
+
+@runtime_checkable
+class ConvertProtocol[T](Protocol):
+    @classmethod
+    def convert_from_string(cls, string: str) -> T: ...
+
+
+class Expected[T]:
+    __value: T | None
+    __error: str
+
+    def __init__(self, value: Any, exp: type[T]):
+        if isinstance(value, exp):
+            self.__value = value
+            self.__error = ""
+        elif isinstance(value, str) and issubclass(exp, ConvertProtocol):
+            self.__value = exp.convert_from_string(value)
+            self.__error = ""
+        else:
+            self.__value = None
+            self.__error = f"Expected value must be a {exp.__name__}, otherwise must convert with {exp.__name__}.convert_from_string."
+
+    def __bool__(self):
+        return self.value
+
+    @property
+    def error(self):
+        return self.__error
+
+    @property
+    def value(self) -> T:
+        if self.__value is None:
+            raise ValueError(self.__error)
+        return self.__value
 
 
 class Blackboard:
-    _data: defaultdict[str, dict[str, Any]] = defaultdict(dict)
+    _data: dict[str, Any] = {}
 
-    @classmethod
-    def get_input(cls, tree_id: str, key: str):
-        return cls._data[tree_id][key]
+    def __getitem__(self, key: str):
+        return self._data.get(key)
 
-    @classmethod
-    def set_output(cls, tree_id, key: str, value: Any):
-        cls._data[tree_id][key] = value
+    def __setitem__(self, key: str, value: Any):
+        self._data[key] = value
 
 
-class Port:
-    def __init__(self, tree_id: str, data: dict[str, Any]):
-        self._data = data
-        self._id = tree_id
+# class Port:
+#     def __init__(self, tree_id: str, data: dict[str, Any]):
+#         self._data = data
+#         self._id = tree_id
 
-    def get_input(self, port_name: str, default: Any, expected: type = type(None)):
-        value = self._data.get(port_name, default)
-        if self.closed(value):
-            value = Blackboard.get_input(self._id, value[1:-1])
-        if self.closed(value, "''"):
-            return expected.convert_from_string(value.strip("'"))
-        return value
+#     def get_input(self, port_name: str, expected: type, default: Any):
+#         value = self._data.get(port_name, default)
+#         if self.closed(value):
+#             value = Blackboard.get_input(self._id, value[1:-1])
+#         if self.closed(value, "''"):
+#             value = expected.convert_from_string(value.strip("'"))
+#         return Expected(value, None)
 
-    def set_output(self, port_name: str, value: Any):
-        key = self._data.get(port_name)
-        if self.closed(key):
-            Blackboard.set_output(self._id, key[1:-1], value)
-        elif isinstance(key, str) and self.closed(value, "''"):
-            Blackboard.set_output(self._id, key, value)
+#     def set_output(self, port_name: str, value: Any):
+#         key = self._data.get(port_name)
+#         if self.closed(key):
+#             Blackboard.set_output(self._id, key[1:-1], value)
+#         elif isinstance(key, str) and self.closed(value, "''"):
+#             Blackboard.set_output(self._id, key, value)
+
+#     @staticmethod
+#     def closed(value: Any, closure="{}") -> TypeGuard[str]:
+#         return isinstance(value, str) and value[:: len(value) - 1] == closure
+
+
+class NodeConfig:
+    def __init__(self):
+        self._blackboard = Blackboard()
+
+    def _get_input(self, port: dict[str, Any], name: str, default=None):
+        port_value = port.get(name, default)
+        if isinstance(port_value, str) and NodeConfig.is_closed(port_value):
+            return self._blackboard[port_value[1:-1]]
+        return port_value
+
+    def _set_output(self, port: dict[str, Any], name: str, value: Any):
+        port_value = port.get(name)
+        if isinstance(port_value, str) and NodeConfig.is_closed(port_value):
+            self._blackboard[port_value[1:-1]] = value
 
     @staticmethod
-    def closed(value: Any, closure="{}") -> TypeGuard[str]:
-        return isinstance(value, str) and value[:: len(value) - 1] == closure
+    def is_closed(value: str, closure="{}"):
+        return value[:: len(value) - 1] == closure
