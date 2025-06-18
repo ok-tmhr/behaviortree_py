@@ -1,0 +1,27 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "ID": "MainTree",
+            "BehaviorTree": {
+                "Sequence": [
+                    {
+                        "BatteryOK": null
+                    },
+                    {
+                        "SaySomething": null,
+                        "message": "mission started..."
+                    },
+                    {
+                        "MoveBase": null,
+                        "goal": "1;2;3"
+                    },
+                    {
+                        "SaySomething": null,
+                        "message": "mission completed!"
+                    }
+                ]
+            }
+        }
+    ]
+}

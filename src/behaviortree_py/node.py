@@ -160,3 +160,32 @@ class Script(NodeBase):
         key, value = code.split(":=")
         self._config._blackboard[key] = value.strip("'")
         return NodeStatus.SUCCESS
+
+
+class StatefulActionNode(NodeBase):
+    status: NodeStatus | None
+
+    def __init__(self, child, name=None, config=NodeConfig(), **kwargs):
+        super().__init__(None, name, config, **kwargs)
+        self.status = None
+
+    def __init_subclass__(cls):
+        NodeLibrary.register_node_type(cls)
+
+    def on_start(self):
+        return NodeStatus.SUCCESS
+
+    def on_running(self): ...
+
+    def on_halted(self):
+        pass
+
+    def tick(self):
+        match self.status:
+            case None:
+                self.status = self.on_start()
+            case NodeStatus.RUNNING:
+                self.status = self.on_running()
+            case _:
+                pass
+        return self.status

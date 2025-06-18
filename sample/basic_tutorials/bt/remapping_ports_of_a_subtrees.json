@@ -1,0 +1,51 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "ID": "MainTree",
+            "BehaviorTree": {
+                "Sequence": [
+                    {
+                        "Script": null,
+                        "code": "move_goal:='1;2;3'"
+                    },
+                    {
+                        "SubTree": null,
+                        "ID": "MoveRobot",
+                        "target": "{move_goal}",
+                        "result": "{move_result}"
+                    },
+                    {
+                        "SaySomething": null,
+                        "message": "{move_result}"
+                    }
+                ]
+            }
+        },
+        {
+            "ID": "MoveRobot",
+            "BehaviorTree": {
+                "Fallback": [
+                    {
+                        "Sequence": [
+                            {
+                                "MoveBase": null,
+                                "goal": "{target}"
+                            },
+                            {
+                                "Script": null,
+                                "code": "result:='goal reached'"
+                            }
+                        ]
+                    },
+                    {
+                        "ForceFailure": {
+                            "Script": null,
+                            "code": "result:='error'"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
