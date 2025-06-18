@@ -35,6 +35,9 @@ class Tree(NodeBase):
             status = self.tick()
         return status
 
+    def root_node(self):
+        return self.child
+
 
 class SubTree(NodeBase):
     child: TreeNode
@@ -86,7 +89,7 @@ class BehaviorTreeFactory:
                     case DecoratorNode():
                         stack.append(x.child)
                     case SubTree():
-                        x.update(cls.tree[x._id])
+                        x.update(cls.tree[x._id].root_node())
                     case _:
                         pass
 
@@ -104,8 +107,37 @@ class BehaviorTreeFactory:
             return cls.tree.popitem()[1]
         return cls.tree[cls.main_tree_to_execute]
 
-    # def register_simple_condition(self, ID: str, callback: Callable[[], NodeStatus]):
-    #     TreeNode.register_simple_condition(ID, callback)
+    @staticmethod
+    def register_simple_condition(ID: str, callback: Callable[[], NodeStatus]):
+        NodeLibrary.register_simple_condition(ID, callback)
 
-    def register_simple_action(self, ID: str, callback: Callable[[], NodeStatus]):
+    @staticmethod
+    def register_simple_action(ID: str, callback: Callable[[], NodeStatus]):
         NodeLibrary.register_simple_action(ID, callback)
+
+    @classmethod
+    def register_behavior_tree_from_file(cls, path: str):
+        cls.load_tree_from_json(path)
+
+    @classmethod
+    def create_tree(cls, ID: str):
+        cls.resolve()
+        return cls.tree[ID]
+
+
+def print_tree_recursively(root: TreeNode):
+    def _print_node(node: TreeNode, depth=0):
+        name = getattr(
+            node, f"_{node.__class__.__name__}__alias", node.__class__.__name__
+        )
+        print("   " * depth, name)
+        match node:
+            case ControlNode():
+                for c in node.child:
+                    _print_node(c, depth + 1)
+            case DecoratorNode():
+                _print_node(node.child, depth + 1)
+            case SubTree():
+                _print_node(node.child, depth + 1)
+
+    _print_node(root)

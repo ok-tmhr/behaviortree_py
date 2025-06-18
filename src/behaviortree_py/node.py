@@ -91,6 +91,18 @@ class NodeLibrary:
 
         cls.register_node_type(SimpleAction)
 
+    @classmethod
+    def register_simple_condition(cls, ID: str, callback: Callable[[], NodeStatus]):
+        class SimpleCondition:
+            parent: TreeNode
+            __alias = ID
+
+            def __init__(self, child=None, name: str | None = None, **kwargs):
+                self.tick = callback
+                self.name = name or ID
+
+        cls.register_node_type(SimpleCondition)
+
 
 class ControlNode(NodeBase):
     child: list[TreeNode]

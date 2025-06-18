@@ -1,0 +1,42 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "BehaviorTree": {
+                "Sequence": [
+                    {
+                        "Fallback": [
+                            {
+                                "Inverter": { "IsDoorClosed": null }
+                            },
+                            { "SubTree": null, "ID": "DoorClosed" }
+                        ]
+                    },
+                    {
+                        "PassThroughDoor": null
+                    }
+                ]
+            },
+            "ID": "MainTree"
+        },
+        {
+            "ID": "DoorClosed",
+            "BehaviorTree": {
+                "Fallback": [
+                    {
+                        "OpenDoor": null
+                    },
+                    {
+                        "num_attempts": 5,
+                        "RetryUntilSuccessful": {
+                            "PickLock": null
+                        }
+                    },
+                    {
+                        "SmashDoor": null
+                    }
+                ]
+            }
+        }
+    ]
+}

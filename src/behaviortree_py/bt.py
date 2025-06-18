@@ -8,6 +8,12 @@ class ConvertProtocol[T](Protocol):
     def convert_from_string(cls, string: str) -> T: ...
 
 
+def convert_from_string(cls: type, string: str):
+    if isinstance(cls, ConvertProtocol):
+        return cls.convert_from_string(string)
+    return cls(string)
+
+
 class Expected[T]:
     __value: T | None
     __error: str
@@ -16,15 +22,19 @@ class Expected[T]:
         if isinstance(value, exp):
             self.__value = value
             self.__error = ""
-        elif isinstance(value, str) and issubclass(exp, ConvertProtocol):
-            self.__value = exp.convert_from_string(value)
-            self.__error = ""
+        elif isinstance(value, str):
+            try:
+                self.__value = convert_from_string(exp, value)
+                self.__error = ""
+            except Exception as e:
+                self.__value = None
+                self.__error = str(e)
         else:
             self.__value = None
             self.__error = f"Expected value must be a {exp.__name__}, otherwise must convert with {exp.__name__}.convert_from_string."
 
     def __bool__(self):
-        return self.value
+        return self.value is not None
 
     @property
     def error(self):
