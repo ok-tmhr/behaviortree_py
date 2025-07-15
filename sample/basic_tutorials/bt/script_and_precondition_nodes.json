@@ -1,0 +1,43 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "BehaviorTree": {
+                "Sequence": [
+                    {
+                        "Script": null,
+                        "code": " msg:='hello world' "
+                    },
+                    {
+                        "Script": null,
+                        "code": " A:=THE_ANSWER; B:=3.14; color:=RED "
+                    },
+                    {
+                        "Precondition": {
+                            "Sequence": [
+                                {
+                                    "SaySomething": null,
+                                    "message": "{A}"
+                                },
+                                {
+                                    "SaySomething": null,
+                                    "message": "{B}"
+                                },
+                                {
+                                    "SaySomething": null,
+                                    "message": "{msg}"
+                                },
+                                {
+                                    "SaySomething": null,
+                                    "message": "{color}"
+                                }
+                            ]
+                        },
+                        "if": "A>B && color != BLUE",
+                        "else": "FAILURE"
+                    }
+                ]
+            }
+        }
+    ]
+}

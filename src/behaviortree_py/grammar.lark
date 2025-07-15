@@ -1,0 +1,65 @@
+?start: expression
+
+?expression: statement
+    | statement ";" expression -> state
+
+?statement: disjunction
+    | NAME "=" disjunction -> assign
+    | NAME ":=" disjunction -> define
+
+?disjunction: conjunction
+    | disjunction "or" conjunction -> or_
+
+?conjunction: inversion
+    | conjunction "and" inversion -> and_
+
+?inversion: comparison
+    | "not" comparison -> not_
+
+?comparison: sum
+    | sum "is not" comparison -> is_not
+    | sum "is" comparison -> is_
+    | sum "<=" comparison -> le
+    | sum "<" comparison -> lt
+    | sum ">=" comparison -> ge
+    | sum ">" comparison -> gt
+    | sum "!=" comparison -> ne
+    | sum "==" comparison -> eq
+
+?sum: product
+    | sum "+" product -> add
+    | sum "-" product -> sub
+
+?product: sign
+    | product "*" sign -> mul
+    | product "/" sign -> truediv
+    | product "//" sign -> floordiv
+    | product "%" sign -> mod
+
+?sign: power
+    | "-" power -> neg
+
+?power: atom
+    | atom "**" power -> pow
+
+?atom: FLOAT -> float
+    | INT -> int
+    | NAME -> var
+    | STRING -> string
+    | "True" -> true
+    | "False" -> false
+    | "None" -> none
+    | "(" sum ")"
+
+STRING : "'" ("_" | LETTER | DIGIT | WS_INLINE)* "'"
+
+%import common.CNAME -> NAME
+%import common.NUMBER
+%import common.SIGNED_INT -> INT
+%import common.SIGNED_FLOAT -> FLOAT
+%import common.LETTER
+%import common.DIGIT
+%import common.WS_INLINE
+%import common.ESCAPED_STRING
+
+%ignore WS_INLINE
