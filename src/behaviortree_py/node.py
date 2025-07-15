@@ -17,6 +17,7 @@ class NodeStatus(Enum):
 @runtime_checkable
 class TreeNode(Protocol):
     parent: "TreeNode"
+    _config: NodeConfig
 
     def tick(self) -> NodeStatus: ...
 
@@ -28,12 +29,12 @@ class NodeBase(ABC):
         self,
         child: None | TreeNode | list[TreeNode],
         name: str | None = None,
-        config=NodeConfig(),
+        config=None,
         **kwargs,
     ):
         self.child = child
         self.name = name or self.__class__.__name__
-        self._config = config
+        self._config = config or NodeConfig()
         self._port = kwargs
 
     @abstractmethod
@@ -53,6 +54,7 @@ class NodeBase(ABC):
 
 class NodeLibrary:
     _node_type: ClassVar[dict[str, type[TreeNode]]] = {}
+    _enums: dict[str, Enum | int] = {e.name: e for e in NodeStatus}
 
     @classmethod
     def register_node_type(cls, node_type: type[TreeNode]):
@@ -85,9 +87,12 @@ class NodeLibrary:
             parent: TreeNode
             __alias = ID
 
-            def __init__(self, child=None, name: str | None = None, **kwargs):
+            def __init__(
+                self, child=None, name: str | None = None, config=None, **kwargs
+            ):
                 self.tick = callback
                 self.name = name or ID
+                self._config = config or NodeConfig()
 
         cls.register_node_type(SimpleAction)
 
@@ -97,17 +102,29 @@ class NodeLibrary:
             parent: TreeNode
             __alias = ID
 
-            def __init__(self, child=None, name: str | None = None, **kwargs):
+            def __init__(
+                self, child=None, name: str | None = None, config=None, **kwargs
+            ):
                 self.tick = callback
                 self.name = name or ID
+                self._config = config or NodeConfig()
 
         cls.register_node_type(SimpleCondition)
+
+    @classmethod
+    def register_scripting_enums(cls, enum: type[Enum]):
+        for item in enum:
+            cls._enums[item.name] = item
+
+    @classmethod
+    def register_scripting_enum(cls, name: str, value: int):
+        cls._enums[name] = value
 
 
 class ControlNode(NodeBase):
     child: list[TreeNode]
 
-    def __init__(self, child: list[TreeNode], name=None, config=NodeConfig(), **kwargs):
+    def __init__(self, child: list[TreeNode], name=None, config=None, **kwargs):
         super().__init__(child, name, config, **kwargs)
         self._index = 0
 
@@ -121,7 +138,7 @@ class ControlNode(NodeBase):
 class DecoratorNode(NodeBase):
     child: TreeNode
 
-    def __init__(self, child: TreeNode, name=None, config=NodeConfig(), **kwargs):
+    def __init__(self, child: TreeNode, name=None, config=None, **kwargs):
         super().__init__(child, name, config, **kwargs)
         child.parent = self
 
@@ -132,7 +149,7 @@ class DecoratorNode(NodeBase):
 class ActionNode(NodeBase):
     __alias = "Action"
 
-    def __new__(cls, child: None, ID: str, name=None, config=NodeConfig(), **kwargs):
+    def __new__(cls, child: None, ID: str, name=None, config=None, **kwargs):
         node_type = NodeLibrary.get_node_type(ID)
         self = super().__new__(node_type)
         self.name = name or node_type.__name__
@@ -140,14 +157,14 @@ class ActionNode(NodeBase):
         self._port = kwargs
         return self
 
-    def __init__(self, child: None, ID: str, name=None, config=NodeConfig(), **kwargs):
+    def __init__(self, child: None, ID: str, name=None, config=None, **kwargs):
         pass
 
     def tick(self): ...
 
 
 class SyncActionNode(NodeBase):
-    def __init__(self, child, name=None, config=NodeConfig(), **kwargs):
+    def __init__(self, child, name=None, config=None, **kwargs):
         super().__init__(None, name, config, **kwargs)
 
     def __init_subclass__(cls):
@@ -165,7 +182,7 @@ class Script(NodeBase):
 class StatefulActionNode(NodeBase):
     status: NodeStatus | None
 
-    def __init__(self, child, name=None, config=NodeConfig(), **kwargs):
+    def __init__(self, child, name=None, config=None, **kwargs):
         super().__init__(None, name, config, **kwargs)
         self.status = None
 

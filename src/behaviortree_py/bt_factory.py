@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
 
@@ -19,9 +20,7 @@ class Tree(NodeBase):
     __alias = "BehaviorTree"
     child: TreeNode
 
-    def __init__(
-        self, child: TreeNode, ID: str, name=None, config=NodeConfig(), **kwargs
-    ):
+    def __init__(self, child: TreeNode, ID: str, name=None, config=None, **kwargs):
         super().__init__(child, name, config, **kwargs)
         self._id = ID
         self.child.parent = self
@@ -42,9 +41,7 @@ class Tree(NodeBase):
 class SubTree(NodeBase):
     child: TreeNode
 
-    def __init__(
-        self, child: TreeNode, ID: str, name=None, config=NodeConfig(), **kwargs
-    ):
+    def __init__(self, child: TreeNode, ID: str, name=None, config=None, **kwargs):
         super().__init__(None, name, config, **kwargs)
         self._id = ID
 
@@ -54,6 +51,7 @@ class SubTree(NodeBase):
     def update(self, child: TreeNode):
         self.child = deepcopy(child)
         self.child.parent = self
+        self._config = self.child._config
 
 
 class BehaviorTreeFactory:
@@ -123,6 +121,14 @@ class BehaviorTreeFactory:
     def create_tree(cls, ID: str):
         cls.resolve()
         return cls.tree[ID]
+
+    @staticmethod
+    def register_scripting_enums(enum: type[Enum]):
+        NodeLibrary.register_scripting_enums(enum)
+
+    @staticmethod
+    def register_scripting_enum(name: str, value: int):
+        NodeLibrary.register_scripting_enum(name, value)
 
 
 def print_tree_recursively(root: TreeNode):
