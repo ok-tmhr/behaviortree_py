@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import Any, Callable, ClassVar, Protocol, TypeVar, runtime_checkable
 
+from . import scripting
 from .bt import Expected, NodeConfig
 
 T = TypeVar("T")
@@ -40,7 +41,9 @@ class NodeBase(ABC):
     @abstractmethod
     def tick(self) -> NodeStatus: ...
 
-    def get_input(self, port: str, default: Any, expected: type[T]) -> Expected[T]:
+    def get_input(
+        self, port: str, default: Any, expected: type[T] | None = None
+    ) -> Expected[T]:
         value = self._config._get_input(self._port, port, default)
         return Expected(value, expected)
 
@@ -174,8 +177,10 @@ class SyncActionNode(NodeBase):
 class Script(NodeBase):
     def tick(self):
         code = str(self._port.pop("code"))
-        key, value = code.split(":=")
-        self._config._blackboard[key] = value.strip("'")
+        parser = scripting.get_parser(
+            NodeLibrary._enums, self._config._blackboard._data
+        )
+        parser.parse(code)
         return NodeStatus.SUCCESS
 
 

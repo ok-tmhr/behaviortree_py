@@ -2,6 +2,7 @@
     "BTCPP_format": 4,
     "root": [
         {
+            "ID": "MainTree",
             "BehaviorTree": {
                 "Sequence": [
                     {
@@ -33,7 +34,7 @@
                                 }
                             ]
                         },
-                        "if": "A>B && color != BLUE",
+                        "if": "A>B and color != BLUE",
                         "else": "FAILURE"
                     }
                 ]

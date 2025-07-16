@@ -1,5 +1,6 @@
 import ast
 import operator as op
+from pathlib import Path
 from typing import Any
 
 from lark import Lark, Transformer, v_args
@@ -33,29 +34,36 @@ class ScriptTransformer(Transformer):
     int = int
     float = float
 
-    def __init__(self, enums: dict[str, Any] | None = None):
-        self.vars: dict[str, Any] = {}
+    def __init__(
+        self,
+        enums: dict[str, Any] | None = None,
+        variables: dict[str, Any] | None = None,
+    ):
         if enums is None:
-            self.enums = {}
+            self.enums: dict[str, Any] = {}
         else:
             self.enums = enums
+        if variables is None:
+            self.vars: dict[str, Any] = {}
+        else:
+            self.vars = variables
 
     def state(self, *args):
         return args[-1]
 
     def assign(self, var, value):
-        print(value)
+        var = str(var)
         if var not in self.vars:
             raise NameError(f"{var} not found")
         self.vars[var] = value
 
     def define(self, var, value):
-        self.vars[var] = value
+        self.vars[str(var)] = value
 
-    def var(self, value):
-        if x := self.enums.get(value):
+    def var(self, name):
+        if x := self.enums.get(name):
             return x
-        return self.vars[value]
+        return self.vars[name]
 
     def string(self, v):
         return ast.literal_eval(v)
@@ -70,8 +78,17 @@ class ScriptTransformer(Transformer):
         return None
 
 
+def get_parser(enums, variables):
+    p = Path(__file__).with_name("grammar.lark")
+    with p.open(encoding="utf8") as f:
+        return Lark(
+            f.read(), parser="lalr", transformer=ScriptTransformer(enums, variables)
+        )
+
+
 if __name__ == "__main__":
     from enum import Enum
+    from pathlib import Path
 
     class NodeStatus(Enum):
         SUCCESS = 1
@@ -91,7 +108,7 @@ if __name__ == "__main__":
     enums.update({s.name: s for s in Color})
     enums["THE_ANSWER"] = 42
 
-    with open("grammar.lark", encoding="utf8") as grammar:
+    with open(Path(__file__).with_name("grammar.lark"), encoding="utf8") as grammar:
         parser = Lark(
             grammar.read(), parser="lalr", transformer=ScriptTransformer(enums)
         )
@@ -103,6 +120,9 @@ if __name__ == "__main__":
         calc("A>B and color != BLUE"),
         calc("FAILURE"),
         calc("'hello'*2"),
+        calc("A"),
+        calc("B"),
+        calc("color"),
     ):
         a = ScriptTransformer(enums).transform(tree)
         print(a)
