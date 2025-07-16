@@ -18,8 +18,8 @@ class Expected[T]:
     __value: T | None
     __error: str
 
-    def __init__(self, value: Any, exp: type[T]):
-        if isinstance(value, exp):
+    def __init__(self, value: Any, exp: type[T] | None):
+        if exp is None or isinstance(value, exp):
             self.__value = value
             self.__error = ""
         elif isinstance(value, str):
