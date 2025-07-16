@@ -1,5 +1,6 @@
+from . import scripting
 from .bt import NodeConfig
-from .node import DecoratorNode, NodeStatus, TreeNode
+from .node import DecoratorNode, NodeLibrary, NodeStatus, TreeNode
 
 
 class Inverter(DecoratorNode):
@@ -28,3 +29,35 @@ class RetryUntilSuccessful(DecoratorNode):
         if s == NodeStatus.FAILURE and self._attempt < num_attempts:
             return NodeStatus.RUNNING
         return s
+
+
+class ForceFailure(DecoratorNode):
+    def tick(self):
+        status = self.child.tick()
+        if status == NodeStatus.RUNNING:
+            return status
+        return NodeStatus.FAILURE
+
+
+class AlwaysSuccess(DecoratorNode):
+    def tick(self):
+        status = self.child.tick()
+        if status == NodeStatus.RUNNING:
+            return status
+        return NodeStatus.SUCCESS
+
+
+class Precondition(DecoratorNode):
+    def tick(self):
+        result = self.get_input("if", "True", str)
+        if not result:
+            raise ValueError(result.error)
+        parser = scripting.get_parser(
+            NodeLibrary._enums, self._config._blackboard._data
+        )
+        if parser.parse(result.value):
+            return self.child.tick()
+        result = self.get_input("else", "FAILURE", str)
+        if not result:
+            raise ValueError(result.error)
+        return parser.parse(result.value)
