@@ -1,6 +1,8 @@
-from typing import NamedTuple
+import time
+from dataclasses import dataclass
+from typing import Any, NamedTuple
 
-from behaviortree_py.node import NodeStatus, SyncActionNode
+from behaviortree_py.node import NodeStatus, StatefulActionNode, SyncActionNode
 
 
 class ApproachObject(SyncActionNode):
@@ -31,7 +33,7 @@ class GripperInterface:
 
 class SaySomething(SyncActionNode):
     def tick(self):
-        message = self.get_input("message", "Nothing to say", str).value
+        message = self.get_input("message", "Nothing to say").value
         print("Robot says:", message)
         return NodeStatus.SUCCESS
 
@@ -69,3 +71,42 @@ class PrintTarget(SyncActionNode):
             raise ValueError("error reading port [target]")
         print(f"Target positions: [ {target.x}, {target.y} ]")
         return NodeStatus.SUCCESS
+
+
+@dataclass
+class Pose2D:
+    x: float
+    y: float
+    theta: float
+
+    @classmethod
+    def convert_from_string(cls, string: str):
+        x, y, theta = map(float, string.split(";"))
+        return cls(x, y, theta)
+
+
+class MoveBaseAction(StatefulActionNode):
+    __alias = "MoveBase"
+    _goal: Pose2D
+    _completion_time: float
+
+    def on_start(self):
+        msg = self.get_input("goal", None, Pose2D)
+        if not msg:
+            raise ValueError("missing required input [goal]")
+        self._goal = msg.value
+        print(
+            f"[ MoveBase: SEND REQUEST ]. goal: x={self._goal.x} y={self._goal.y} theta={self._goal.theta}"
+        )
+        self._completion_time = time.time() + 0.22
+        return NodeStatus.RUNNING
+
+    def on_running(self):
+        time.sleep(0.01)
+        if time.time() >= self._completion_time:
+            print("[ MoveBase: FINISHED ]")
+            return NodeStatus.SUCCESS
+        return NodeStatus.RUNNING
+
+    def on_halted(self):
+        print("[ MoveBase: ABORTED ]")
