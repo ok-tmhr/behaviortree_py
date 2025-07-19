@@ -13,6 +13,7 @@ class NodeStatus(Enum):
     SUCCESS = auto()
     FAILURE = auto()
     RUNNING = auto()
+    IDLE = auto()
 
 
 @runtime_checkable
@@ -21,6 +22,12 @@ class TreeNode(Protocol):
     _config: NodeConfig
 
     def tick(self) -> NodeStatus: ...
+
+    def get_input(
+        self, port: str, default: Any, expected: type[T] | None = None
+    ) -> Expected[T]: ...
+
+    def set_output(self, port: str, value: Any) -> None: ...
 
 
 class NodeBase(ABC):
@@ -86,31 +93,37 @@ class NodeLibrary:
 
     @classmethod
     def register_simple_action(cls, ID: str, callback: Callable[[], NodeStatus]):
-        class SimpleAction:
+        class SimpleAction(NodeBase):
             parent: TreeNode
             __alias = ID
 
             def __init__(
                 self, child=None, name: str | None = None, config=None, **kwargs
             ):
-                self.tick = callback
+                self.__callback = callback
                 self.name = name or ID
                 self._config = config or NodeConfig()
+
+            def tick(self):
+                return self.__callback()
 
         cls.register_node_type(SimpleAction)
 
     @classmethod
     def register_simple_condition(cls, ID: str, callback: Callable[[], NodeStatus]):
-        class SimpleCondition:
+        class SimpleCondition(NodeBase):
             parent: TreeNode
             __alias = ID
 
             def __init__(
                 self, child=None, name: str | None = None, config=None, **kwargs
             ):
-                self.tick = callback
+                self.__callback = callback
                 self.name = name or ID
                 self._config = config or NodeConfig()
+
+            def tick(self):
+                return self.__callback()
 
         cls.register_node_type(SimpleCondition)
 

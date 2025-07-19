@@ -56,6 +56,12 @@ class Blackboard:
     def __setitem__(self, key: str, value: Any):
         self._data[key] = value
 
+    def __contains__(self, key: str):
+        return key in self._data
+
+    def get(self, key: str, default=None):
+        return self._data.get(key, default)
+
 
 # class Port:
 #     def __init__(self, tree_id: str, data: dict[str, Any]):
@@ -100,3 +106,9 @@ class NodeConfig:
     @staticmethod
     def is_closed(value: str, closure="{}"):
         return value[:: len(value) - 1] == closure
+
+    def get_board_value(self, closed_key: str):
+        return self._blackboard.get(closed_key[1:-1])
+
+    def set_board_value(self, closed_key: str, value: Any):
+        self._blackboard[closed_key[1:-1]] = value

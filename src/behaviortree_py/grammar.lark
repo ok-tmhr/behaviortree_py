@@ -51,7 +51,7 @@
     | "None" -> none
     | "(" sum ")"
 
-STRING : "'" ("_" | LETTER | DIGIT | WS_INLINE)* "'"
+STRING : "'" ("_" | ";" | LETTER | DIGIT | WS_INLINE)* "'"
 
 %import common.CNAME -> NAME
 %import common.NUMBER

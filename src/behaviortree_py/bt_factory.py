@@ -44,9 +44,23 @@ class SubTree(NodeBase):
     def __init__(self, child: TreeNode, ID: str, name=None, config=None, **kwargs):
         super().__init__(None, name, config, **kwargs)
         self._id = ID
+        self._status = NodeStatus.IDLE
 
     def tick(self) -> NodeStatus:
-        return self.child.tick()
+        if self._status == NodeStatus.IDLE:
+            self._status = NodeStatus.RUNNING
+            for key, parent_board_key in self._port.items():
+                if value := self.parent._config.get_board_value(parent_board_key):
+                    self._config.set_board_value("{" + key + "}", value)
+        s = self.child.tick()
+        if s == NodeStatus.SUCCESS:
+            for key, parent_board_key in self._port.items():
+                if self.parent._config.get_board_value(parent_board_key) is None:
+                    self.parent._config.set_board_value(
+                        parent_board_key, self._config.get_board_value("{" + key + "}")
+                    )
+        self._status = s
+        return s
 
     def update(self, child: TreeNode):
         self.child = deepcopy(child)
