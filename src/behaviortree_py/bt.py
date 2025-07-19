@@ -62,30 +62,11 @@ class Blackboard:
     def get(self, key: str, default=None):
         return self._data.get(key, default)
 
+    def keys(self):
+        return self._data.keys()
 
-# class Port:
-#     def __init__(self, tree_id: str, data: dict[str, Any]):
-#         self._data = data
-#         self._id = tree_id
-
-#     def get_input(self, port_name: str, expected: type, default: Any):
-#         value = self._data.get(port_name, default)
-#         if self.closed(value):
-#             value = Blackboard.get_input(self._id, value[1:-1])
-#         if self.closed(value, "''"):
-#             value = expected.convert_from_string(value.strip("'"))
-#         return Expected(value, None)
-
-#     def set_output(self, port_name: str, value: Any):
-#         key = self._data.get(port_name)
-#         if self.closed(key):
-#             Blackboard.set_output(self._id, key[1:-1], value)
-#         elif isinstance(key, str) and self.closed(value, "''"):
-#             Blackboard.set_output(self._id, key, value)
-
-#     @staticmethod
-#     def closed(value: Any, closure="{}") -> TypeGuard[str]:
-#         return isinstance(value, str) and value[:: len(value) - 1] == closure
+    def items(self):
+        return self._data.items()
 
 
 class NodeConfig:

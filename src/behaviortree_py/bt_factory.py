@@ -47,25 +47,39 @@ class SubTree(NodeBase):
         self._status = NodeStatus.IDLE
 
     def tick(self) -> NodeStatus:
+        # if self._status == NodeStatus.IDLE:
+        #     self._status = NodeStatus.RUNNING
+        #     for key, parent_board_key in self._port.items():
+        #         if value := self.parent._config.get_board_value(parent_board_key):
+        #             self._config.set_board_value("{" + key + "}", value)
+        # s = self.child.tick()
+        # if s == NodeStatus.SUCCESS:
+        #     for key, parent_board_key in self._port.items():
+        #         if self.parent._config.get_board_value(parent_board_key) is None:
+        #             self.parent._config.set_board_value(
+        #                 parent_board_key, self._config.get_board_value("{" + key + "}")
+        #             )
+        # self._status = s
+        # return s
         if self._status == NodeStatus.IDLE:
-            self._status = NodeStatus.RUNNING
-            for key, parent_board_key in self._port.items():
-                if value := self.parent._config.get_board_value(parent_board_key):
-                    self._config.set_board_value("{" + key + "}", value)
-        s = self.child.tick()
-        if s == NodeStatus.SUCCESS:
-            for key, parent_board_key in self._port.items():
-                if self.parent._config.get_board_value(parent_board_key) is None:
-                    self.parent._config.set_board_value(
-                        parent_board_key, self._config.get_board_value("{" + key + "}")
-                    )
-        self._status = s
-        return s
+            self.map_(self.parent._config, self._config, self.swap(self._port))
+        self._status = self.child.tick()
+        if self._status == NodeStatus.SUCCESS:
+            self.map_(self._config, self.parent._config, self._port)
+        return self._status
 
     def update(self, child: TreeNode):
         self.child = deepcopy(child)
         self.child.parent = self
         self._config = self.child._config
+
+    def map_(self, from_: NodeConfig, to: NodeConfig, mapping: dict[str, str]):
+        keys = from_._blackboard.keys() & mapping.keys()
+        for key in keys:
+            to._set_output(mapping, key, from_._blackboard[key])
+
+    def swap(self, mapping: dict[str, str]):
+        return {v.strip("{}"): "{" + k + "}" for k, v in mapping.items()}
 
 
 class BehaviorTreeFactory:
