@@ -23,21 +23,12 @@ class Inverter(DecoratorNode):
                 return s
 
 
-class RetryUntilSuccessful(DecoratorNode):
-    def __init__(self, child: TreeNode, name=None, **kwargs):
-        super().__init__(child, name, **kwargs)
-        self._attempt = 0
-
-    def tick(self) -> NodeStatus:
-        self._attempt += 1
-        result = self.get_input("num_attempts", 5, int)
-        if not result:
-            raise ValueError(result.error)
-        num_attempts = result.value
-        s = self.child.tick()
-        if s == NodeStatus.FAILURE and self._attempt < num_attempts:
-            return NodeStatus.RUNNING
-        return s
+class ForceSuccess(DecoratorNode):
+    def tick(self):
+        status = self.child.tick()
+        if status == NodeStatus.RUNNING:
+            return status
+        return NodeStatus.SUCCESS
 
 
 class ForceFailure(DecoratorNode):
@@ -54,6 +45,39 @@ class AlwaysSuccess(DecoratorNode):
         if status == NodeStatus.RUNNING:
             return status
         return NodeStatus.SUCCESS
+
+
+class Repeat(DecoratorNode):
+    def __init__(self, child, name=None, **kwargs):
+        super().__init__(child, name, **kwargs)
+        self.cycle = 0
+
+    def tick(self):
+        num_cycles = self.get_input("num_cycles", 3, int).value
+
+        while (
+            self.cycle < num_cycles and (s := self.child.tick()) == NodeStatus.SUCCESS
+        ):
+            self.cycle += 1
+
+        return s
+
+
+class RetryUntilSuccessful(DecoratorNode):
+    def __init__(self, child: TreeNode, name=None, **kwargs):
+        super().__init__(child, name, **kwargs)
+        self._attempt = 0
+
+    def tick(self) -> NodeStatus:
+        self._attempt += 1
+        result = self.get_input("num_attempts", 5, int)
+        if not result:
+            raise ValueError(result.error)
+        num_attempts = result.value
+        s = self.child.tick()
+        if s == NodeStatus.FAILURE and self._attempt < num_attempts:
+            return NodeStatus.RUNNING
+        return s
 
 
 class Precondition(DecoratorNode):
