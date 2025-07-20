@@ -1,0 +1,24 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "ID": "MainTree",
+            "BehaviorTree": {
+                "Sequence": [
+                    {
+                        "SaySomething": null,
+                        "message": "starting MainTree"
+                    },
+                    {
+                        "SubTree": null,
+                        "ID": "SubTreeA"
+                    },
+                    {
+                        "SubTree": null,
+                        "ID": "SubTreeB"
+                    }
+                ]
+            }
+        }
+    ]
+}

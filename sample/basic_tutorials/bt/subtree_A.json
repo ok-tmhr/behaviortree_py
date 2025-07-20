@@ -1,0 +1,12 @@
+{
+    "BTCPP_format": 4,
+    "root": [
+        {
+            "ID": "SubTreeA",
+            "BehaviorTree": {
+                "SaySomething": null,
+                "message": "Executing Sub_A"
+            }
+        }
+    ]
+}

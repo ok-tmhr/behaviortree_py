@@ -1,0 +1,24 @@
+from pathlib import Path
+
+import dummy_nodes
+
+from behaviortree_py.bt_factory import BehaviorTreeFactory
+
+if __name__ == "__main__":
+    factory = BehaviorTreeFactory()
+
+    for bt_file in (
+        "bt/load_multiple_files_manually.json",
+        "bt/subtree_A.json",
+        "bt/subtree_B.json",
+    ):
+        bt_path = Path(__file__).parent / bt_file
+        factory.register_behavior_tree_from_file(bt_path.as_posix())
+
+    print("----- MainTree tick ----")
+    main_tree = factory.create_tree("MainTree")
+    main_tree.tick_while_running()
+
+    print("----- SubA tick ----")
+    sub_a_tree = factory.create_tree("SubTreeA")
+    sub_a_tree.tick_while_running()
