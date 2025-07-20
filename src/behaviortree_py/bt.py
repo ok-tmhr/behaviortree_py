@@ -48,7 +48,10 @@ class Expected[T]:
 
 
 class Blackboard:
-    _data: dict[str, Any] = {}
+    _data: dict[str, Any]
+
+    def __init__(self):
+        self._data = {}
 
     def __getitem__(self, key: str):
         return self._data.get(key)
