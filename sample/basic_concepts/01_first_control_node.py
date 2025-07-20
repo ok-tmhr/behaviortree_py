@@ -1,4 +1,3 @@
-from behaviortree_py.control import Sequence
 from behaviortree_py.node import NodeStatus, SyncActionNode
 
 

@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
 from behaviortree_py.node import NodeStatus, StatefulActionNode, SyncActionNode
 

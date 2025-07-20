@@ -51,15 +51,12 @@
     | "None" -> none
     | "(" sum ")"
 
-STRING : "'" ("_" | ";" | LETTER | DIGIT | WS_INLINE)* "'"
+STRING : "'" _STRING_INNER "'"
 
 %import common.CNAME -> NAME
-%import common.NUMBER
-%import common.SIGNED_INT -> INT
 %import common.SIGNED_FLOAT -> FLOAT
-%import common.LETTER
-%import common.DIGIT
+%import common.SIGNED_INT -> INT
 %import common.WS_INLINE
-%import common.ESCAPED_STRING
+%import common._STRING_INNER
 
 %ignore WS_INLINE

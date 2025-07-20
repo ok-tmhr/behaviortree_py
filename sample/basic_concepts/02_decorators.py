@@ -1,9 +1,6 @@
 from random import random
 
-from behaviortree_py.node import (
-    NodeStatus,
-    SyncActionNode,
-)
+from behaviortree_py.node import NodeStatus, SyncActionNode
 
 
 class IsDoorOpen(SyncActionNode):

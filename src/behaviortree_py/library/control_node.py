@@ -1,4 +1,7 @@
-from .node import ControlNode, NodeStatus
+from behaviortree_py.core import NodeStatus
+from behaviortree_py.node import ControlNode
+
+__all__ = "Sequence", "Fallback"
 
 
 class Sequence(ControlNode):

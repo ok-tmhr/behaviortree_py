@@ -1,5 +1,14 @@
-from collections import defaultdict
-from typing import Any, Protocol, Self, TypeGuard, runtime_checkable
+from enum import Enum, auto
+from typing import Any, Protocol, runtime_checkable
+
+__all__ = "NodeStatus", "Blackboard", "NodeConfig", "Expected"
+
+
+class NodeStatus(Enum):
+    SUCCESS = auto()
+    FAILURE = auto()
+    RUNNING = auto()
+    IDLE = auto()
 
 
 @runtime_checkable
