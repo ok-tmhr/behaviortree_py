@@ -80,6 +80,10 @@ class Blackboard:
     def items(self):
         return self._data.items()
 
+    def debug_message(self):
+        for key, value in self.items():
+            print(key, f"({type(value).__name__})")
+
 
 class NodeConfig:
     def __init__(self):

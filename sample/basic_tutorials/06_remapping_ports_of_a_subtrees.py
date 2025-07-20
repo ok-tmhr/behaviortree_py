@@ -15,5 +15,7 @@ tree = factory.create_tree("MainTree")
 tree.tick_while_running()
 
 print("----- First BB -----")
+tree.subtrees[0].blackboard.debug_message()
 
 print("----- Second BB -----")
+tree.subtrees[1].blackboard.debug_message()

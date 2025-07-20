@@ -24,6 +24,8 @@ class Tree(NodeBase):
         self._id = ID
         self.child.parent = self
         self._config = NodeConfig()
+        self.subtrees: list["SubTree" | "Tree"] = [self]
+        self.blackboard = self._config._blackboard
 
     def tick(self) -> NodeStatus:
         return self.child.tick()
@@ -61,6 +63,7 @@ class SubTree(NodeBase):
         self.child = deepcopy(child)
         self.child.parent = self
         self._config = NodeConfig()
+        self.blackboard = self._config._blackboard
 
     def map_(self, from_: NodeConfig, to: NodeConfig, mapping: dict[str, str]):
         keys = from_._blackboard.keys() & mapping.keys()
@@ -110,6 +113,7 @@ class BehaviorTreeFactory:
                         stack.append(x.child)
                     case SubTree():
                         x.copy_tree(cls.tree[x._id].root_node())
+                        cls.tree[cls.main_tree_to_execute].subtrees.append(x)
                         stack.append(x.child)
                     case _:
                         pass
