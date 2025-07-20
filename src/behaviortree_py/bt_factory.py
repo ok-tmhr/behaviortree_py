@@ -58,7 +58,7 @@ class SubTree(NodeBase):
             self.map_(self._config, self.parent._config, self._port)
         return self._status
 
-    def update(self, child: TreeNode):
+    def copy_tree(self, child: TreeNode):
         self.child = deepcopy(child)
         self.child.parent = self
         self._config = NodeConfig()
@@ -110,7 +110,7 @@ class BehaviorTreeFactory:
                     case DecoratorNode():
                         stack.append(x.child)
                     case SubTree():
-                        x.update(cls.tree[x._id].root_node())
+                        x.copy_tree(cls.tree[x._id].root_node())
                         stack.append(x.child)
                     case _:
                         pass
