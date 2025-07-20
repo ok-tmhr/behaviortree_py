@@ -20,10 +20,11 @@ class Tree(NodeBase):
     __alias = "BehaviorTree"
     child: TreeNode
 
-    def __init__(self, child: TreeNode, ID: str, name=None, config=None, **kwargs):
-        super().__init__(child, name, config, **kwargs)
+    def __init__(self, child: TreeNode, ID: str, name=None, **kwargs):
+        super().__init__(child, name, **kwargs)
         self._id = ID
         self.child.parent = self
+        self._config = NodeConfig()
 
     def tick(self) -> NodeStatus:
         return self.child.tick()
@@ -37,30 +38,19 @@ class Tree(NodeBase):
     def root_node(self):
         return self.child
 
+    def _update(self):
+        pass
+
 
 class SubTree(NodeBase):
     child: TreeNode
 
-    def __init__(self, child: TreeNode, ID: str, name=None, config=None, **kwargs):
-        super().__init__(None, name, config, **kwargs)
+    def __init__(self, child: TreeNode, ID: str, name=None, **kwargs):
+        super().__init__(None, name, **kwargs)
         self._id = ID
         self._status = NodeStatus.IDLE
 
     def tick(self) -> NodeStatus:
-        # if self._status == NodeStatus.IDLE:
-        #     self._status = NodeStatus.RUNNING
-        #     for key, parent_board_key in self._port.items():
-        #         if value := self.parent._config.get_board_value(parent_board_key):
-        #             self._config.set_board_value("{" + key + "}", value)
-        # s = self.child.tick()
-        # if s == NodeStatus.SUCCESS:
-        #     for key, parent_board_key in self._port.items():
-        #         if self.parent._config.get_board_value(parent_board_key) is None:
-        #             self.parent._config.set_board_value(
-        #                 parent_board_key, self._config.get_board_value("{" + key + "}")
-        #             )
-        # self._status = s
-        # return s
         if self._status == NodeStatus.IDLE:
             self.map_(self.parent._config, self._config, self.swap(self._port))
         self._status = self.child.tick()
@@ -71,7 +61,7 @@ class SubTree(NodeBase):
     def update(self, child: TreeNode):
         self.child = deepcopy(child)
         self.child.parent = self
-        self._config = self.child._config
+        self._config = NodeConfig()
 
     def map_(self, from_: NodeConfig, to: NodeConfig, mapping: dict[str, str]):
         keys = from_._blackboard.keys() & mapping.keys()
@@ -81,6 +71,9 @@ class SubTree(NodeBase):
     def swap(self, mapping: dict[str, str]):
         return {v.strip("{}"): "{" + k + "}" for k, v in mapping.items()}
 
+    def _update(self):
+        pass
+
 
 class BehaviorTreeFactory:
     tree: dict[str, Tree] = {}
@@ -89,7 +82,7 @@ class BehaviorTreeFactory:
     bt_path: Path
 
     @classmethod
-    def json_hook(cls, obj: dict[str, Any], config: NodeConfig):
+    def json_hook(cls, obj: dict[str, Any]):
         match obj:
             case {"include": x}:
                 include_path = Path(x)
@@ -99,23 +92,26 @@ class BehaviorTreeFactory:
             case {"BTCPP_format": x}:
                 cls.btcpp_format = x
             case {"BehaviorTree": x, "ID": y}:
-                cls.tree[y] = NodeLibrary.create_node(**obj, config=config)
+                cls.tree[y] = NodeLibrary.create_node(**obj)
                 return cls.tree[y]
             case _:
-                return NodeLibrary.create_node(**obj, config=config)
+                return NodeLibrary.create_node(**obj)
 
     @classmethod
     def resolve(cls):
         for t in cls.tree.values():
             stack = [t.child]
             while stack:
-                match x := stack.pop():
+                x = stack.pop()
+                x._update()
+                match x:
                     case ControlNode():
                         stack.extend(x.child)
                     case DecoratorNode():
                         stack.append(x.child)
                     case SubTree():
                         x.update(cls.tree[x._id].root_node())
+                        stack.append(x.child)
                     case _:
                         pass
 
@@ -123,7 +119,7 @@ class BehaviorTreeFactory:
     def load_tree_from_json(cls, path: str | Path):
         cls.bt_path = Path(path)
         with open(path, encoding="utf8") as f:
-            return json.load(f, object_hook=lambda x: cls.json_hook(x, NodeConfig()))
+            return json.load(f, object_hook=cls.json_hook)
 
     @classmethod
     def create_tree_from_file(cls, path: str):

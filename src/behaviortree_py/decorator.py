@@ -15,8 +15,8 @@ class Inverter(DecoratorNode):
 
 
 class RetryUntilSuccessful(DecoratorNode):
-    def __init__(self, child: TreeNode, name=None, config=NodeConfig(), **kwargs):
-        super().__init__(child, name, config, **kwargs)
+    def __init__(self, child: TreeNode, name=None, **kwargs):
+        super().__init__(child, name, **kwargs)
         self._attempt = 0
 
     def tick(self) -> NodeStatus:

@@ -29,20 +29,21 @@ class TreeNode(Protocol):
 
     def set_output(self, port: str, value: Any) -> None: ...
 
+    def _update(self): ...
+
 
 class NodeBase(ABC):
     parent: TreeNode
+    _config: NodeConfig
 
     def __init__(
         self,
         child: None | TreeNode | list[TreeNode],
         name: str | None = None,
-        config=None,
         **kwargs,
     ):
         self.child = child
         self.name = name or self.__class__.__name__
-        self._config = config or NodeConfig()
         self._port = kwargs
 
     @abstractmethod
@@ -56,6 +57,9 @@ class NodeBase(ABC):
 
     def set_output(self, port: str, value: Any) -> None:
         self._config._set_output(self._port, port, value)
+
+    def _update(self):
+        self._config = self.parent._config
 
     def __init_subclass__(cls):
         if not inspect.isabstract(cls):
@@ -97,12 +101,9 @@ class NodeLibrary:
             parent: TreeNode
             __alias = ID
 
-            def __init__(
-                self, child=None, name: str | None = None, config=None, **kwargs
-            ):
+            def __init__(self, child=None, name: str | None = None, **kwargs):
                 self.__callback = callback
                 self.name = name or ID
-                self._config = config or NodeConfig()
 
             def tick(self):
                 return self.__callback()
@@ -115,12 +116,9 @@ class NodeLibrary:
             parent: TreeNode
             __alias = ID
 
-            def __init__(
-                self, child=None, name: str | None = None, config=None, **kwargs
-            ):
+            def __init__(self, child=None, name: str | None = None, **kwargs):
                 self.__callback = callback
                 self.name = name or ID
-                self._config = config or NodeConfig()
 
             def tick(self):
                 return self.__callback()
@@ -140,8 +138,8 @@ class NodeLibrary:
 class ControlNode(NodeBase):
     child: list[TreeNode]
 
-    def __init__(self, child: list[TreeNode], name=None, config=None, **kwargs):
-        super().__init__(child, name, config, **kwargs)
+    def __init__(self, child: list[TreeNode], name=None, **kwargs):
+        super().__init__(child, name, **kwargs)
         self._index = 0
 
         for c in child:
@@ -154,8 +152,8 @@ class ControlNode(NodeBase):
 class DecoratorNode(NodeBase):
     child: TreeNode
 
-    def __init__(self, child: TreeNode, name=None, config=None, **kwargs):
-        super().__init__(child, name, config, **kwargs)
+    def __init__(self, child: TreeNode, name=None, **kwargs):
+        super().__init__(child, name, **kwargs)
         child.parent = self
 
     def __init_subclass__(cls):
@@ -165,23 +163,22 @@ class DecoratorNode(NodeBase):
 class ActionNode(NodeBase):
     __alias = "Action"
 
-    def __new__(cls, child: None, ID: str, name=None, config=None, **kwargs):
+    def __new__(cls, child: None, ID: str, name=None, **kwargs):
         node_type = NodeLibrary.get_node_type(ID)
         self = super().__new__(node_type)
         self.name = name or node_type.__name__
-        self._config = config
         self._port = kwargs
         return self
 
-    def __init__(self, child: None, ID: str, name=None, config=None, **kwargs):
+    def __init__(self, child: None, ID: str, name=None, **kwargs):
         pass
 
     def tick(self): ...
 
 
 class SyncActionNode(NodeBase):
-    def __init__(self, child, name=None, config=None, **kwargs):
-        super().__init__(None, name, config, **kwargs)
+    def __init__(self, child, name=None, **kwargs):
+        super().__init__(None, name, **kwargs)
 
     def __init_subclass__(cls):
         NodeLibrary.register_node_type(cls)
@@ -200,8 +197,8 @@ class Script(NodeBase):
 class StatefulActionNode(NodeBase):
     status: NodeStatus | None
 
-    def __init__(self, child, name=None, config=None, **kwargs):
-        super().__init__(None, name, config, **kwargs)
+    def __init__(self, child, name=None, **kwargs):
+        super().__init__(None, name, **kwargs)
         self.status = None
 
     def __init_subclass__(cls):
